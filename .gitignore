@@ -1,0 +1,9 @@
+# Мусор операционной системы
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Настройки редакторов
+.idea/
+.vscode/
+*.swp
