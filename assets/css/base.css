@@ -145,6 +145,25 @@ ul {
   border: 0;
 }
 
+/* --- Фон главной страницы --- */
+
+/* Созвездие точек: слой за содержимым, клики не перехватывает. */
+.site-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Контент и подвал — над фоном. */
+main,
+.footer {
+  position: relative;
+  z-index: 1;
+}
+
 /* --- Шапка --- */
 
 /* Липкая шапка: полупрозрачный фон, иначе контент просвечивает под текстом. */
@@ -433,7 +452,7 @@ ul {
 .app-card {
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  background: linear-gradient(125deg, rgba(24, 32, 46, 0.96), rgba(16, 20, 29, 0.96));
+  background: linear-gradient(125deg, rgba(24, 32, 46, 0.82), rgba(16, 20, 29, 0.72));
   box-shadow: var(--shadow);
   transition: transform 0.2s ease, border-color 0.2s ease;
 }
@@ -665,7 +684,7 @@ ul {
   padding: clamp(1.5rem, 4vw, 2rem);
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
-  background: linear-gradient(130deg, rgba(19, 25, 36, 0.92), rgba(14, 18, 26, 0.8));
+  background: linear-gradient(130deg, rgba(19, 25, 36, 0.78), rgba(14, 18, 26, 0.64));
 }
 
 .about-grid {
