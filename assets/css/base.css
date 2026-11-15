@@ -37,6 +37,8 @@
   /* Раскладка */
   --wrap: 1080px;
   --gutter: 24px;
+  /* Высота липкой шапки: используется для отступа якорей и липких вкладок. */
+  --header-h: 5rem;
 }
 
 /* --- Сброс --- */
@@ -50,7 +52,7 @@
 html {
   -webkit-text-size-adjust: 100%;
   /* Отступ для перехода к якорю: липкая шапка не должна перекрывать заголовок. */
-  scroll-padding-top: 5.5rem;
+  scroll-padding-top: calc(var(--header-h) + 0.5rem);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -515,6 +517,153 @@ ul {
   line-height: 1.35;
 }
 
+/* --- Раздел приложений: заголовок, вкладки, область загрузки --- */
+
+.page-head {
+  padding: clamp(2rem, 5vw, 3.25rem) 0 clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.page-head h1 {
+  margin-top: 1rem;
+  font-size: clamp(2rem, 4.6vw, 2.8rem);
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.page-head p {
+  max-width: 60ch;
+  margin-top: 0.9rem;
+  color: var(--text-muted);
+}
+
+/* Полоса вкладок липнет под шапкой: приложения бывают длинными. */
+.tabs-bar {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 20;
+  background: rgba(11, 13, 18, 0.96);
+  border-block: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.tabs-track {
+  display: flex;
+  gap: 0.5rem;
+  padding-block: 0.75rem;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.tabs-track::-webkit-scrollbar {
+  height: 6px;
+}
+
+.tabs-track::-webkit-scrollbar-thumb {
+  border-radius: 3px;
+  background: var(--line-strong);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tabs-track {
+    scroll-behavior: smooth;
+  }
+}
+
+.tab {
+  flex: 0 0 auto;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(18, 23, 34, 0.72);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  transition: color 0.18s ease, border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.tab:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.tab.is-active,
+.tab[aria-current="page"] {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(143, 176, 255, 0.12);
+}
+
+.stage {
+  padding: clamp(1rem, 2.5vw, 1.5rem) 0 clamp(2rem, 5vw, 3rem);
+}
+
+/* Высоту задаёт скрипт по сообщению из приложения; без JS остаётся минимум. */
+.stage iframe {
+  display: block;
+  width: 100%;
+  min-height: 380px;
+  border: 0;
+  background: transparent;
+}
+
+/* --- Страница приложения (загружается в iframe раздела) --- */
+
+.app-page {
+  margin: 0;
+  min-height: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app-shell {
+  width: min(100% - 2 * var(--gutter), 60rem);
+  margin-inline: auto;
+  padding-block: clamp(1.25rem, 3vw, 2rem) clamp(2rem, 4vw, 3rem);
+}
+
+.app-shell h1 {
+  margin-top: 0.85rem;
+  font-size: clamp(1.7rem, 3.6vw, 2.3rem);
+  letter-spacing: -0.02em;
+}
+
+.app-lead {
+  max-width: 58ch;
+  margin-top: 0.75rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+.app-panel {
+  margin-top: 1.5rem;
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--text-muted);
+  font-size: 0.92rem;
+}
+
+.app-panel strong {
+  color: var(--text);
+}
+
+.app-back {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+}
+
+.app-back a {
+  color: var(--accent);
+}
+
+.app-back a:hover {
+  color: var(--accent-strong);
+}
+
 /* --- Блок «О сайте» --- */
 
 .about {
@@ -733,10 +882,7 @@ ul {
 @media (max-width: 640px) {
   :root {
     --gutter: 18px;
-  }
-
-  html {
-    scroll-padding-top: 5rem;
+    --header-h: 4.3rem;
   }
 
   .topbar {
@@ -768,6 +914,19 @@ ul {
     height: 340px;
   }
 
+  .tabs-track {
+    padding-block: 0.6rem;
+  }
+
+  .tab {
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
+  }
+
+  .stage iframe {
+    min-height: 320px;
+  }
+
   .footer {
     flex-direction: column;
     align-items: flex-start;
@@ -777,8 +936,8 @@ ul {
 
 /* Узкие экраны: шапка в две строки, чтобы пункты меню не переносились по слогам. */
 @media (max-width: 480px) {
-  html {
-    scroll-padding-top: 6.75rem;
+  :root {
+    --header-h: 5.75rem;
   }
 
   .topbar {
