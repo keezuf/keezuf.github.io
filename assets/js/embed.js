@@ -10,7 +10,9 @@
   let lastHeight = 0;
 
   function report() {
-    const height = Math.ceil(document.documentElement.scrollHeight);
+    /* Высота body, а не scrollHeight: scrollHeight не бывает меньше высоты
+       самого iframe, из-за чего область не могла сжаться до реальной высоты. */
+    const height = Math.ceil(document.body.getBoundingClientRect().height);
     if (height === lastHeight) {
       return;
     }

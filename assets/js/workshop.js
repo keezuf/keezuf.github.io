@@ -10,7 +10,7 @@
   }
 
   const bar = document.querySelector(".tabs-bar");
-  const MIN_HEIGHT = 320;
+  const MIN_HEIGHT = 60;
   const MAX_HEIGHT = 6000;
 
   function markActive(current) {
@@ -31,6 +31,7 @@
 
     if (frame.getAttribute("src") !== href) {
       frame.style.height = "";
+      frame.style.minHeight = "";
       frame.setAttribute("src", href);
     }
     frame.setAttribute("title", tab.textContent.trim());
@@ -89,6 +90,9 @@
     const height = Math.min(Math.max(Math.ceil(data.height), MIN_HEIGHT), MAX_HEIGHT);
     if (Math.abs(frame.offsetHeight - height) > 4) {
       frame.style.height = height + "px";
+      /* min-height в CSS — запасной вариант без JavaScript; с ним область
+         не могла сжаться до реальной высоты приложения. */
+      frame.style.minHeight = "0";
     }
   });
 
