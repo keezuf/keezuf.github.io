@@ -5,20 +5,353 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b0d12">
   <title>Скорость резания — Металлобработка</title>
-  <meta name="description" content="Расчёт скорости резания и частоты вращения шпинделя для токарной обработки.">
+  <meta name="description" content="Калькулятор токарной обработки: частота вращения шпинделя по скорости резания и диаметру и обратный расчёт скорости резания по оборотам.">
   <link rel="canonical" href="https://keezuf.github.io/apps/metalworking/speed/">
-  <link rel="icon" href="../../../assets/img/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="../../../assets/css/base.css">
-  <script src="../../../assets/js/embed.js" defer></script>
+  <link rel="icon" href="../../../assets/img/favicon.svg?v=1a83950b" type="image/svg+xml">
+  <link rel="stylesheet" href="../../../assets/css/base.css?v=1a83950b">
+  <script src="../../../assets/js/embed.js?v=1a83950b" defer></script>
 </head>
 <body class="app-page">
   <main class="app-shell">
-    <h1 class="visually-hidden">Скорость резания</h1>
-    <p class="app-lead">Расчёт скорости резания и частоты вращения шпинделя для токарной обработки.</p>
-    <div class="app-panel">
-      <p><strong>В разработке.</strong> Здесь появятся поля ввода и результат расчёта.</p>
+    <h1 class="visually-hidden">Скорость резания и частота вращения шпинделя</h1>
+    <p class="app-lead">Два расчёта для токарной обработки: сколько оборотов нужно для заданной скорости резания и какую скорость резания даёт выбранная частота вращения.</p>
+
+    <style>
+      /* Калькулятор скорости резания: две независимые карточки — прямой и обратный расчёт.
+         Стили живут в самой странице приложения и используют токены base.css. */
+      .calc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .calc-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        padding: clamp(0.95rem, 2.4vw, 1.3rem);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: linear-gradient(135deg, rgba(24, 32, 46, 0.72), rgba(16, 20, 29, 0.58));
+      }
+
+      .calc-title {
+        font-size: 1.02rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 1.35;
+      }
+
+      .calc-note {
+        color: var(--text-muted);
+        font-size: 0.86rem;
+        line-height: 1.5;
+      }
+
+      .calc-fields {
+        display: grid;
+        gap: 0.7rem;
+      }
+
+      .field {
+        display: grid;
+        gap: 0.3rem;
+      }
+
+      .field-label {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        line-height: 1.4;
+      }
+
+      .field-box {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-inline: 0.7rem;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: rgba(8, 11, 17, 0.6);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .field-box:hover {
+        border-color: #4a5c80;
+      }
+
+      /* Фокус показываем на всём поле, а не на тонкой строке ввода. */
+      .field-box:focus-within {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(143, 176, 255, 0.18);
+      }
+
+      .field-input {
+        width: 100%;
+        min-width: 0;
+        padding: 0.52rem 0;
+        border: 0;
+        background: none;
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 1rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .field-input:focus {
+        outline: none;
+      }
+
+      .field-input::placeholder {
+        color: var(--text-dim);
+      }
+
+      .field-unit {
+        flex: 0 0 auto;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        white-space: nowrap;
+      }
+
+      .field-hint {
+        color: #ffb0b0;
+        font-size: 0.78rem;
+        line-height: 1.4;
+      }
+
+      .field-hint[hidden] {
+        display: none;
+      }
+
+      .calc-result {
+        margin-top: auto;
+        padding-top: 0.85rem;
+        border-top: 1px solid var(--line);
+      }
+
+      .calc-result-label {
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .calc-value {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.45rem;
+        margin-top: 0.35rem;
+      }
+
+      .calc-number {
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: clamp(1.55rem, 5.5vw, 2rem);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .calc-unit {
+        color: var(--text-muted);
+        font-size: 0.88rem;
+      }
+
+      .calc-formula {
+        margin-top: 0.4rem;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        font-size: 0.74rem;
+        line-height: 1.5;
+      }
+
+      .calc-foot {
+        max-width: 72ch;
+        margin-top: 1.1rem;
+        color: var(--text-dim);
+        font-size: 0.82rem;
+        line-height: 1.55;
+      }
+    </style>
+
+    <div class="calc-grid">
+      <section class="calc-card" aria-labelledby="calc-rpm-title">
+        <h2 class="calc-title" id="calc-rpm-title">Обороты по скорости резания</h2>
+        <p class="calc-note">Задайте целевую скорость резания и диаметр обработки — получите нужную частоту вращения шпинделя.</p>
+
+        <div class="calc-fields">
+          <div class="field">
+            <label class="field-label" for="v-target">Скорость резания, м/мин</label>
+            <div class="field-box">
+              <input class="field-input" id="v-target" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="120" value="120" aria-describedby="hint-v-target">
+              <span class="field-unit" aria-hidden="true">м/мин</span>
+            </div>
+            <p class="field-hint" id="hint-v-target" hidden></p>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="d-rpm">Диаметр обработки, мм</label>
+            <div class="field-box">
+              <input class="field-input" id="d-rpm" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="50" value="50" aria-describedby="hint-d-rpm">
+              <span class="field-unit" aria-hidden="true">мм</span>
+            </div>
+            <p class="field-hint" id="hint-d-rpm" hidden></p>
+          </div>
+        </div>
+
+        <div class="calc-result">
+          <p class="calc-result-label">Нужная частота вращения</p>
+          <output class="calc-value" for="v-target d-rpm" aria-live="polite" data-output="rpm">
+            <span class="calc-number" data-value>—</span>
+            <span class="calc-unit">об/мин</span>
+          </output>
+          <p class="calc-formula">n = 1000 · v / (π · D)</p>
+        </div>
+      </section>
+
+      <section class="calc-card" aria-labelledby="calc-speed-title">
+        <h2 class="calc-title" id="calc-speed-title">Скорость резания по оборотам</h2>
+        <p class="calc-note">Задайте частоту вращения и диаметр обработки — получите скорость резания, которая получится на таком режиме.</p>
+
+        <div class="calc-fields">
+          <div class="field">
+            <label class="field-label" for="rpm-actual">Частота вращения, об/мин</label>
+            <div class="field-box">
+              <input class="field-input" id="rpm-actual" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="800" value="800" aria-describedby="hint-rpm-actual">
+              <span class="field-unit" aria-hidden="true">об/мин</span>
+            </div>
+            <p class="field-hint" id="hint-rpm-actual" hidden></p>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="d-speed">Диаметр обработки, мм</label>
+            <div class="field-box">
+              <input class="field-input" id="d-speed" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="50" value="50" aria-describedby="hint-d-speed">
+              <span class="field-unit" aria-hidden="true">мм</span>
+            </div>
+            <p class="field-hint" id="hint-d-speed" hidden></p>
+          </div>
+        </div>
+
+        <div class="calc-result">
+          <p class="calc-result-label">Скорость резания</p>
+          <output class="calc-value" for="rpm-actual d-speed" aria-live="polite" data-output="speed">
+            <span class="calc-number" data-value>—</span>
+            <span class="calc-unit">м/мин</span>
+          </output>
+          <p class="calc-formula">v = π · D · n / 1000</p>
+        </div>
+      </section>
     </div>
+
+    <p class="calc-foot">Обозначения: v — скорость резания, м/мин; D — диаметр обработки, мм; n — частота вращения шпинделя, об/мин. Расчёт идёт по π ≈ 3,14159, на экране значение округлено.</p>
   </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const INVALID_MESSAGE = "Введите число больше нуля";
+      const EMPTY_VALUE = "—";
+
+      const formatters = new Map();
+
+      function formatNumber(value, digits) {
+        if (!formatters.has(digits)) {
+          formatters.set(
+            digits,
+            new Intl.NumberFormat("ru-RU", { maximumFractionDigits: digits })
+          );
+        }
+        return formatters.get(digits).format(value);
+      }
+
+      /* Числа вводят с запятой и пробелами между разрядами — принимаем оба варианта.
+         Незаконченный ввод («12,») не считается ошибкой, пока не появилась цифра после разделителя. */
+      function readNumber(input) {
+        const cleaned = input.value
+          .replace(/[\s\u00a0\u202f]/g, "")
+          .replace(/,/g, ".")
+          .replace(/\.$/, "");
+
+        if (cleaned === "") {
+          return { empty: true };
+        }
+        if (!/^\d*\.?\d+$/.test(cleaned)) {
+          return { invalid: true };
+        }
+
+        const value = Number(cleaned);
+        return Number.isFinite(value) && value > 0 ? { value } : { invalid: true };
+      }
+
+      /* Карточка: два поля ввода, формула расчёта и место для результата. */
+      function bindCard(card) {
+        const output = document.querySelector('[data-output="' + card.id + '"]');
+        const resultNode = output.querySelector("[data-value]");
+        const fields = [card.first, card.diameter];
+
+        function update() {
+          const parsed = fields.map((field) => readNumber(field.input));
+          let complete = true;
+
+          fields.forEach((field, index) => {
+            const invalid = Boolean(parsed[index].invalid);
+
+            field.hint.textContent = invalid ? INVALID_MESSAGE : "";
+            field.hint.hidden = !invalid;
+
+            if (invalid) {
+              field.input.setAttribute("aria-invalid", "true");
+            } else {
+              field.input.removeAttribute("aria-invalid");
+            }
+
+            if (invalid || parsed[index].empty) {
+              complete = false;
+            }
+          });
+
+          const value = complete ? card.compute(parsed[0].value, parsed[1].value) : Number.NaN;
+          resultNode.textContent = Number.isFinite(value) ? formatNumber(value, card.digits) : EMPTY_VALUE;
+        }
+
+        fields.forEach((field) => {
+          field.input.addEventListener("input", update);
+        });
+
+        update();
+      }
+
+      const byId = (id) => document.getElementById(id);
+
+      /* Прямой расчёт: сколько оборотов нужно для заданной скорости резания. */
+      bindCard({
+        id: "rpm",
+        first: { input: byId("v-target"), hint: byId("hint-v-target") },
+        diameter: { input: byId("d-rpm"), hint: byId("hint-d-rpm") },
+        compute: (speed, diameter) => (1000 * speed) / (Math.PI * diameter),
+        digits: 1,
+      });
+
+      /* Обратный расчёт: какая скорость резания получится на заданных оборотах. */
+      bindCard({
+        id: "speed",
+        first: { input: byId("rpm-actual"), hint: byId("hint-rpm-actual") },
+        diameter: { input: byId("d-speed"), hint: byId("hint-d-speed") },
+        compute: (rpm, diameter) => (Math.PI * diameter * rpm) / 1000,
+        digits: 2,
+      });
+    })();
+  </script>
+
+  <!-- Cloudflare Web Analytics -->
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "c6d6e0b0d92b46e0b3321fcfb130423d"}'></script>
+  <!-- End Cloudflare Web Analytics -->
 </body>
 </html>
 

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d12">
+  <title>Новости — Keezuf Lab</title>
+  <meta name="description" content="Что нового на сайте: обновления, новые приложения и исправления.">
+  <link rel="canonical" href="https://keezuf.github.io/news/">
+  <link rel="icon" href="../assets/img/favicon.svg?v=1a83950b" type="image/svg+xml">
+  <link rel="stylesheet" href="../assets/css/base.css?v=1a83950b">
+  <script src="../assets/js/embed.js?v=1a83950b" defer></script>
+</head>
+<body class="app-page">
+  <main class="app-shell">
+    <h1 class="visually-hidden">Новости</h1>
+
+    <section class="news">
+      <input class="news-switch" type="checkbox" id="news-expand">
+
+      <div class="news-list">
+        <!--
+          Блок новости. Чтобы добавить новость:
+          1. скопируйте весь <article class="news-item"> … </article> ниже;
+          2. вставьте его ПЕРВЫМ в списке (новые — сверху);
+          3. поменяйте дату, заголовок и описание.
+          Описание необязательно: если его нет, удалите строку <p class="news-text">…</p>.
+        -->
+
+        <article class="news-item">
+          <p class="news-date"><time datetime="2026-11-15">15.11.2026</time></p>
+          <h2 class="news-title">Добавлено приложение «Расчёт конуса»</h2>
+          <p class="news-text">Угол конуса по двум диаметрам и длине — и обратный расчёт: второй диаметр по углу. Угол задаётся на сторону или общий, от оси или от торца.</p>
+        </article>
+
+        <article class="news-item">
+          <p class="news-date"><time datetime="2026-11-15">15.11.2026</time></p>
+          <h2 class="news-title">Добавлено приложение «Скорость резания»</h2>
+          <p class="news-text">Два расчёта для токарной обработки: сколько оборотов нужно для заданной скорости резания и какую скорость резания даёт выбранная частота вращения.</p>
+        </article>
+
+        <article class="news-item">
+          <p class="news-date"><time datetime="2026-11-15">15.11.2026</time></p>
+          <h2 class="news-title">Сайт создан</h2>
+          <p class="news-text">Запущена первая версия: главная с каталогом, документы и обезличенная статистика посещаемости.</p>
+        </article>
+      </div>
+
+      <label class="news-toggle" for="news-expand">
+        <span class="news-toggle-more">Показать все новости</span>
+        <span class="news-toggle-less">Свернуть</span>
+      </label>
+    </section>
+  </main>
+
+  <script src="../assets/js/news.js?v=1a83950b" defer></script>
+
+  <!-- Cloudflare Web Analytics -->
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "c6d6e0b0d92b46e0b3321fcfb130423d"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+</body>
+</html>
+
