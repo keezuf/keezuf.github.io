@@ -1,0 +1,1397 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0d12">
+  <title>Сверление — Металлообработка</title>
+  <meta name="description" content="Разметка и контроль отверстий на окружности: шаг по хорде, размер от кромки детали, межцентровые расстояния с допусками.">
+  <link rel="canonical" href="https://keezuf.github.io/apps/metalworking/drilling/">
+  <link rel="icon" href="../../../assets/img/favicon.svg?v=f24afffb" type="image/svg+xml">
+  <link rel="stylesheet" href="../../../assets/css/base.css?v=f24afffb">
+  <script src="../../../assets/js/embed.js?v=f24afffb" defer></script>
+</head>
+<body class="app-page">
+  <main class="app-shell">
+    <h1 class="visually-hidden">Сверление: разметка и контроль отверстий на окружности</h1>
+    <p class="app-lead">Отверстия на центровой окружности детали: шаг по хорде, размер для разметки от кромки и контроль межцентровых расстояний с допусками. Размеры в миллиметрах.</p>
+
+    <style>
+      /* Сверление: хорда, разметка от кромки и контроль межцентровых расстояний.
+         Стили живут в самой странице приложения и используют токены base.css. */
+      [hidden] {
+        display: none !important;
+      }
+
+      .drill-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 21rem), 1fr));
+        align-items: start;
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .calc-card {
+        display: flex;
+        flex-direction: column;
+        gap: 0.85rem;
+        min-width: 0;
+        padding: clamp(0.95rem, 2.4vw, 1.3rem);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: linear-gradient(135deg, rgba(24, 32, 46, 0.72), rgba(16, 20, 29, 0.58));
+      }
+
+      .calc-card--wide {
+        grid-column: 1 / -1;
+      }
+
+      .calc-title {
+        font-size: 1.02rem;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 1.35;
+      }
+
+      .calc-note {
+        color: var(--text-muted);
+        font-size: 0.86rem;
+        line-height: 1.5;
+      }
+
+      .calc-fields {
+        display: grid;
+        gap: 0.7rem;
+      }
+
+      .fields-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5rem), 1fr));
+        gap: 0.7rem;
+      }
+
+      .field {
+        display: grid;
+        gap: 0.3rem;
+        min-width: 0;
+      }
+
+      .field-label {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+        line-height: 1.4;
+      }
+
+      .field-box {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding-inline: 0.7rem;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: rgba(8, 11, 17, 0.6);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .field-box:hover {
+        border-color: #4a5c80;
+      }
+
+      .field-box:focus-within {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(143, 176, 255, 0.18);
+      }
+
+      .field-input {
+        width: 100%;
+        min-width: 0;
+        padding: 0.52rem 0;
+        border: 0;
+        background: none;
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 1rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .field-input:focus {
+        outline: none;
+      }
+
+      .field-input::placeholder {
+        color: var(--text-dim);
+      }
+
+      .field-unit {
+        flex: 0 0 auto;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        font-size: 0.75rem;
+        white-space: nowrap;
+      }
+
+      .field-hint {
+        color: #ffb0b0;
+        font-size: 0.78rem;
+        line-height: 1.4;
+      }
+
+      .calc-result {
+        padding-top: 0.85rem;
+        border-top: 1px solid var(--line);
+      }
+
+      .calc-result-label {
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        font-size: 0.68rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .calc-value {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.45rem;
+        margin-top: 0.35rem;
+      }
+
+      .calc-number {
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: clamp(1.55rem, 5.5vw, 2rem);
+        font-weight: 700;
+        line-height: 1.1;
+        letter-spacing: -0.02em;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .calc-unit {
+        color: var(--text-muted);
+        font-size: 0.88rem;
+      }
+
+      .calc-extra {
+        display: grid;
+        gap: 0.3rem;
+        margin-top: 0.6rem;
+      }
+
+      .calc-extra > div {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.4rem 0.75rem;
+        padding-top: 0.3rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .calc-extra dt {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+      }
+
+      .calc-extra dd {
+        margin: 0;
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 0.85rem;
+        font-variant-numeric: tabular-nums;
+        white-space: nowrap;
+      }
+
+      .calc-formula {
+        margin-top: 0.45rem;
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        font-size: 0.74rem;
+        line-height: 1.5;
+      }
+
+      .calc-hint {
+        margin-top: 0.5rem;
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        line-height: 1.45;
+      }
+
+      .figure {
+        margin: 0;
+      }
+
+      .fig {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+
+      .fig-caption {
+        margin-top: 0.35rem;
+        color: var(--text-dim);
+        font-size: 0.78rem;
+        line-height: 1.5;
+      }
+
+      /* Разметка: два размера — от наружной и от внутренней кромки. */
+      .mark-row {
+        display: grid;
+        gap: 0.2rem;
+        padding-top: 0.55rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .mark-row:first-child {
+        padding-top: 0;
+        border-top: 0;
+      }
+
+      .mark-name {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+      }
+
+      .mark-value {
+        display: flex;
+        align-items: baseline;
+        gap: 0.4rem;
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: clamp(1.35rem, 4.5vw, 1.65rem);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .mark-note {
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        font-size: 0.76rem;
+      }
+
+      /* Контроль: четыре группы «схема + два размера». */
+      .ctrl-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
+        gap: 1rem;
+      }
+
+      .ctrl-group {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 0.85rem;
+        min-width: 0;
+        padding: 0.75rem;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: var(--radius);
+        background: rgba(9, 12, 18, 0.35);
+      }
+
+      .ctrl-figure {
+        flex: 0 0 auto;
+        width: 15.5rem;
+        margin: 0;
+      }
+
+      .ctrl-items {
+        display: grid;
+        flex: 1 1 12rem;
+        gap: 0.6rem;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .ctrl-item {
+        display: grid;
+        gap: 0.15rem;
+      }
+
+      .ctrl-name {
+        display: flex;
+        align-items: baseline;
+        gap: 0.4rem;
+        color: var(--text-muted);
+        font-size: 0.8rem;
+        line-height: 1.4;
+      }
+
+      .ctrl-num {
+        display: inline-grid;
+        flex: 0 0 auto;
+        place-items: center;
+        width: 1.05rem;
+        height: 1.05rem;
+        border: 1px solid var(--accent);
+        border-radius: 50%;
+        color: var(--accent);
+        font-family: var(--font-mono);
+        font-size: 0.62rem;
+        line-height: 1;
+      }
+
+      .ctrl-value {
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 1.05rem;
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .ctrl-limit,
+      .ctrl-drawing {
+        color: var(--text-dim);
+        font-family: var(--font-mono);
+        font-size: 0.74rem;
+        line-height: 1.4;
+      }
+
+      .ctrl-warning {
+        color: #ffb0b0;
+        font-size: 0.82rem;
+        line-height: 1.45;
+      }
+
+      /* Схемы */
+      .f-part {
+        fill: rgba(143, 176, 255, 0.05);
+        stroke: var(--line-strong);
+        stroke-width: 1.2;
+      }
+
+      .f-bore {
+        fill: #0b0d12;
+        stroke: var(--line-strong);
+        stroke-width: 1.2;
+      }
+
+      .f-pitch {
+        fill: none;
+        stroke: var(--line-strong);
+        stroke-width: 1;
+        stroke-dasharray: 5 4;
+      }
+
+      .f-hole {
+        fill: #0b0d12;
+        stroke: var(--line-strong);
+        stroke-width: 1;
+      }
+
+      .f-hole--focus {
+        fill: #16233d;
+        stroke: var(--accent);
+        stroke-width: 1.6;
+      }
+
+      .f-dim {
+        stroke: var(--text);
+        stroke-width: 1.1;
+      }
+
+      .f-dim--soft {
+        stroke: var(--text-muted);
+        stroke-dasharray: 5 4;
+      }
+
+      .f-dim--a {
+        stroke: var(--accent);
+      }
+
+      .f-dim--b {
+        stroke: var(--mint);
+      }
+
+      .f-badge--a {
+        stroke: var(--accent);
+      }
+
+      .f-badge--b {
+        stroke: var(--mint);
+      }
+
+      .f-badge-text--a {
+        fill: var(--accent);
+      }
+
+      .f-badge-text--b {
+        fill: var(--mint);
+      }
+
+      .f-ext {
+        stroke: var(--line-strong);
+        stroke-width: 0.8;
+        stroke-dasharray: 3 3;
+      }
+
+      .f-arc {
+        fill: none;
+        stroke: var(--text-muted);
+        stroke-width: 1;
+      }
+
+      .f-badge {
+        fill: #0b0d12;
+        stroke: var(--accent);
+        stroke-width: 1;
+      }
+
+      .f-badge-text {
+        fill: var(--accent);
+        font-family: var(--font-mono);
+        font-size: 9px;
+        font-weight: 700;
+      }
+
+      .f-note {
+        fill: var(--text-muted);
+        font-family: var(--font-mono);
+        font-size: 10px;
+      }
+
+      .calc-foot {
+        max-width: 76ch;
+        margin-top: 1.1rem;
+        color: var(--text-dim);
+        font-size: 0.82rem;
+        line-height: 1.55;
+      }
+
+      @media (max-width: 560px) {
+        .ctrl-figure {
+          width: 100%;
+        }
+      }
+    </style>
+
+    <div class="drill-grid">
+      <section class="calc-card" aria-labelledby="chord-title">
+        <h2 class="calc-title" id="chord-title">Шаг отверстий</h2>
+        <p class="calc-note">Расстояние между центрами соседних отверстий на центровой окружности.</p>
+
+        <div class="calc-fields">
+          <div class="field">
+            <label class="field-label" for="chord-pitch">Диаметр центровой окружности, мм</label>
+            <div class="field-box">
+              <input class="field-input" id="chord-pitch" data-share="pitch" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="100" value="100" aria-describedby="hint-chord-pitch">
+              <span class="field-unit" aria-hidden="true">мм</span>
+            </div>
+            <p class="field-hint" id="hint-chord-pitch" hidden></p>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="chord-count">Число отверстий</label>
+            <div class="field-box">
+              <input class="field-input" id="chord-count" data-share="count" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="8" value="8" aria-describedby="hint-chord-count">
+              <span class="field-unit" aria-hidden="true">шт</span>
+            </div>
+            <p class="field-hint" id="hint-chord-count" hidden></p>
+          </div>
+        </div>
+
+        <div class="calc-result">
+          <p class="calc-result-label">Шаг между соседними отверстиями</p>
+          <output class="calc-value" aria-live="polite">
+            <span class="calc-number" id="chord-step">—</span>
+            <span class="calc-unit">мм</span>
+          </output>
+          <dl class="calc-extra">
+            <div>
+              <dt>Через одно отверстие</dt>
+              <dd id="chord-through">—</dd>
+            </div>
+            <div>
+              <dt>Угол между отверстиями</dt>
+              <dd id="chord-angle">—</dd>
+            </div>
+          </dl>
+          <p class="calc-formula">c = D · sin(180° / n)</p>
+        </div>
+
+        <figure class="figure" id="chord-figure" hidden>
+          <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Отверстия на центровой окружности с хордой между соседними" data-fig="chord"></svg>
+          <figcaption class="fig-caption">c₁ — шаг между соседними отверстиями, c₂ — через одно, φ — угол между отверстиями.</figcaption>
+        </figure>
+      </section>
+
+      <section class="calc-card" aria-labelledby="mark-title">
+        <h2 class="calc-title" id="mark-title">Разметка</h2>
+        <p class="calc-note">Какой размер выставить на инструменте, чтобы от кромки детали попасть в центр отверстия на центровой окружности.</p>
+
+        <div class="calc-fields">
+          <div class="field">
+            <label class="field-label" for="mark-pitch">Диаметр центровой окружности, мм</label>
+            <div class="field-box">
+              <input class="field-input" id="mark-pitch" data-share="pitch" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="100" value="100" aria-describedby="hint-mark-pitch">
+              <span class="field-unit" aria-hidden="true">мм</span>
+            </div>
+            <p class="field-hint" id="hint-mark-pitch" hidden></p>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="mark-od-drawing">Наружный диаметр по чертежу, мм</label>
+            <div class="field-box">
+              <input class="field-input" id="mark-od-drawing" data-share="od-drawing" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="150" value="150" aria-describedby="hint-mark-od-drawing">
+              <span class="field-unit" aria-hidden="true">мм</span>
+            </div>
+            <p class="field-hint" id="hint-mark-od-drawing" hidden></p>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="mark-od-actual">Наружный диаметр фактический, мм</label>
+            <div class="field-box">
+              <input class="field-input" id="mark-od-actual" data-share="od-actual" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="если отличается" aria-describedby="hint-mark-od-actual">
+              <span class="field-unit" aria-hidden="true">мм</span>
+            </div>
+            <p class="field-hint" id="hint-mark-od-actual" hidden></p>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="mark-id-drawing">Внутренний диаметр по чертежу, мм</label>
+            <div class="field-box">
+              <input class="field-input" id="mark-id-drawing" data-share="id-drawing" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="50" value="50" aria-describedby="hint-mark-id-drawing">
+              <span class="field-unit" aria-hidden="true">мм</span>
+            </div>
+            <p class="field-hint" id="hint-mark-id-drawing" hidden></p>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="mark-id-actual">Внутренний диаметр фактический, мм</label>
+            <div class="field-box">
+              <input class="field-input" id="mark-id-actual" data-share="id-actual" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="если отличается" aria-describedby="hint-mark-id-actual">
+              <span class="field-unit" aria-hidden="true">мм</span>
+            </div>
+            <p class="field-hint" id="hint-mark-id-actual" hidden></p>
+          </div>
+        </div>
+
+        <div class="calc-result">
+          <div class="mark-row">
+            <p class="mark-name">От наружной кромки до центра отверстия</p>
+            <p class="mark-value"><span id="mark-outer">—</span><span class="calc-unit">мм</span></p>
+            <p class="mark-note" id="mark-outer-note" hidden></p>
+          </div>
+          <div class="mark-row">
+            <p class="mark-name">От внутренней кромки до центра отверстия</p>
+            <p class="mark-value"><span id="mark-inner">—</span><span class="calc-unit">мм</span></p>
+            <p class="mark-note" id="mark-inner-note" hidden></p>
+          </div>
+          <p class="calc-hint">Фактический размер берётся, если он указан, иначе — чертёжный.</p>
+        </div>
+
+        <figure class="figure" id="mark-figure" hidden>
+          <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Размер от наружной и от внутренней кромки детали до центра отверстия" data-fig="mark"></svg>
+          <figcaption class="fig-caption">Красная линия — размер от наружной кромки, зелёная — от внутренней.</figcaption>
+        </figure>
+      </section>
+
+      <section class="calc-card calc-card--wide" aria-labelledby="ctrl-title" id="ctrl-card">
+        <h2 class="calc-title" id="ctrl-title">Контроль межцентровых расстояний</h2>
+        <p class="calc-note">Что должно показать измерение по каждой паре кромок. Поправки — на фактический диаметр отверстия и фактические диаметры детали, если они указаны.</p>
+
+        <div class="calc-fields">
+          <div class="fields-row">
+            <div class="field">
+              <label class="field-label" for="ctrl-pitch">Диаметр центровой окружности, мм</label>
+              <div class="field-box">
+                <input class="field-input" id="ctrl-pitch" data-share="pitch" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="100" value="100" aria-describedby="hint-ctrl-pitch">
+                <span class="field-unit" aria-hidden="true">мм</span>
+              </div>
+              <p class="field-hint" id="hint-ctrl-pitch" hidden></p>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="ctrl-count">Число отверстий</label>
+              <div class="field-box">
+                <input class="field-input" id="ctrl-count" data-share="count" type="text" inputmode="numeric" autocomplete="off" spellcheck="false" placeholder="8" value="8" aria-describedby="hint-ctrl-count">
+                <span class="field-unit" aria-hidden="true">шт</span>
+              </div>
+              <p class="field-hint" id="hint-ctrl-count" hidden></p>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="ctrl-hole-drawing">Диаметр отверстия по чертежу, мм</label>
+              <div class="field-box">
+                <input class="field-input" id="ctrl-hole-drawing" data-share="hole-drawing" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="6" value="6" aria-describedby="hint-ctrl-hole-drawing">
+                <span class="field-unit" aria-hidden="true">мм</span>
+              </div>
+              <p class="field-hint" id="hint-ctrl-hole-drawing" hidden></p>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="ctrl-hole-actual">Диаметр отверстия фактический, мм</label>
+              <div class="field-box">
+                <input class="field-input" id="ctrl-hole-actual" data-share="hole-actual" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="если отличается" aria-describedby="hint-ctrl-hole-actual">
+                <span class="field-unit" aria-hidden="true">мм</span>
+              </div>
+              <p class="field-hint" id="hint-ctrl-hole-actual" hidden></p>
+            </div>
+          </div>
+
+          <div class="fields-row">
+            <div class="field">
+              <label class="field-label" for="ctrl-od-drawing">Наружный диаметр по чертежу, мм</label>
+              <div class="field-box">
+                <input class="field-input" id="ctrl-od-drawing" data-share="od-drawing" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="150" value="150" aria-describedby="hint-ctrl-od-drawing">
+                <span class="field-unit" aria-hidden="true">мм</span>
+              </div>
+              <p class="field-hint" id="hint-ctrl-od-drawing" hidden></p>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="ctrl-od-actual">Наружный диаметр фактический, мм</label>
+              <div class="field-box">
+                <input class="field-input" id="ctrl-od-actual" data-share="od-actual" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="если отличается" aria-describedby="hint-ctrl-od-actual">
+                <span class="field-unit" aria-hidden="true">мм</span>
+              </div>
+              <p class="field-hint" id="hint-ctrl-od-actual" hidden></p>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="ctrl-id-drawing">Внутренний диаметр по чертежу, мм</label>
+              <div class="field-box">
+                <input class="field-input" id="ctrl-id-drawing" data-share="id-drawing" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="50" value="50" aria-describedby="hint-ctrl-id-drawing">
+                <span class="field-unit" aria-hidden="true">мм</span>
+              </div>
+              <p class="field-hint" id="hint-ctrl-id-drawing" hidden></p>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="ctrl-id-actual">Внутренний диаметр фактический, мм</label>
+              <div class="field-box">
+                <input class="field-input" id="ctrl-id-actual" data-share="id-actual" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="если отличается" aria-describedby="hint-ctrl-id-actual">
+                <span class="field-unit" aria-hidden="true">мм</span>
+              </div>
+              <p class="field-hint" id="hint-ctrl-id-actual" hidden></p>
+            </div>
+
+            <div class="field">
+              <label class="field-label" for="ctrl-tolerance">Допуск на межцентровое, ± мм</label>
+              <div class="field-box">
+                <input class="field-input" id="ctrl-tolerance" data-share="tolerance" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="например, 0,2" aria-describedby="hint-ctrl-tolerance">
+                <span class="field-unit" aria-hidden="true">± мм</span>
+              </div>
+              <p class="field-hint" id="hint-ctrl-tolerance" hidden></p>
+            </div>
+          </div>
+        </div>
+
+        <p class="ctrl-warning" id="ctrl-warning" hidden></p>
+
+        <div class="ctrl-grid">
+          <div class="ctrl-group" id="group-opposite">
+            <figure class="ctrl-figure">
+              <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Противоположные отверстия" data-fig="opposite"></svg>
+            </figure>
+            <ul class="ctrl-items">
+              <li class="ctrl-item">
+                <p class="ctrl-name"><span class="ctrl-num">1</span><span id="name-r1">Внешние кромки · внутренними губками</span></p>
+                <p class="ctrl-value"><span id="r1">—</span><span class="calc-unit"> мм</span></p>
+                <p class="ctrl-limit" id="r1-limit" hidden></p>
+                <p class="ctrl-drawing" id="r1-drawing" hidden></p>
+              </li>
+              <li class="ctrl-item">
+                <p class="ctrl-name"><span class="ctrl-num">2</span><span>Внутренние кромки · наружными губками</span></p>
+                <p class="ctrl-value"><span id="r2">—</span><span class="calc-unit"> мм</span></p>
+                <p class="ctrl-limit" id="r2-limit" hidden></p>
+                <p class="ctrl-drawing" id="r2-drawing" hidden></p>
+              </li>
+            </ul>
+          </div>
+
+          <div class="ctrl-group" id="group-adjacent">
+            <figure class="ctrl-figure">
+              <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Соседние отверстия" data-fig="adjacent"></svg>
+            </figure>
+            <ul class="ctrl-items">
+              <li class="ctrl-item">
+                <p class="ctrl-name"><span class="ctrl-num">3</span><span>Внешние кромки · внутренними губками</span></p>
+                <p class="ctrl-value"><span id="r3">—</span><span class="calc-unit"> мм</span></p>
+                <p class="ctrl-limit" id="r3-limit" hidden></p>
+                <p class="ctrl-drawing" id="r3-drawing" hidden></p>
+              </li>
+              <li class="ctrl-item">
+                <p class="ctrl-name"><span class="ctrl-num">4</span><span>Внутренние кромки · наружными губками</span></p>
+                <p class="ctrl-value"><span id="r4">—</span><span class="calc-unit"> мм</span></p>
+                <p class="ctrl-limit" id="r4-limit" hidden></p>
+                <p class="ctrl-drawing" id="r4-drawing" hidden></p>
+              </li>
+            </ul>
+          </div>
+
+          <div class="ctrl-group" id="group-through">
+            <figure class="ctrl-figure">
+              <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Отверстия через одно" data-fig="through"></svg>
+            </figure>
+            <ul class="ctrl-items">
+              <li class="ctrl-item">
+                <p class="ctrl-name"><span class="ctrl-num">5</span><span>Внешние кромки · внутренними губками</span></p>
+                <p class="ctrl-value"><span id="r5">—</span><span class="calc-unit"> мм</span></p>
+                <p class="ctrl-limit" id="r5-limit" hidden></p>
+                <p class="ctrl-drawing" id="r5-drawing" hidden></p>
+              </li>
+              <li class="ctrl-item">
+                <p class="ctrl-name"><span class="ctrl-num">6</span><span>Внутренние кромки · наружными губками</span></p>
+                <p class="ctrl-value"><span id="r6">—</span><span class="calc-unit"> мм</span></p>
+                <p class="ctrl-limit" id="r6-limit" hidden></p>
+                <p class="ctrl-drawing" id="r6-drawing" hidden></p>
+              </li>
+            </ul>
+          </div>
+
+          <div class="ctrl-group" id="group-edge">
+            <figure class="ctrl-figure">
+              <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Отверстие от наружной и от внутренней кромки детали" data-fig="edge"></svg>
+            </figure>
+            <ul class="ctrl-items">
+              <li class="ctrl-item">
+                <p class="ctrl-name"><span class="ctrl-num">7</span><span>От наружной кромки · наружными губками</span></p>
+                <p class="ctrl-value"><span id="r7">—</span><span class="calc-unit"> мм</span></p>
+                <p class="ctrl-limit" id="r7-limit" hidden></p>
+                <p class="ctrl-drawing" id="r7-drawing" hidden></p>
+              </li>
+              <li class="ctrl-item">
+                <p class="ctrl-name"><span class="ctrl-num">8</span><span>От внутренней кромки · наружными губками</span></p>
+                <p class="ctrl-value"><span id="r8">—</span><span class="calc-unit"> мм</span></p>
+                <p class="ctrl-limit" id="r8-limit" hidden></p>
+                <p class="ctrl-drawing" id="r8-drawing" hidden></p>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <p class="calc-foot">Пункты 1–2 — контроль окружности, на которой лежат отверстия; 3–6 — контроль шага (хорды); 7–8 — концентричность центровой окружности и кромки детали. Поправка на диаметр отверстия учитывается по фактическому размеру, если он указан. Пределы: ± допуск на межцентровое для 1–6 и ± половина допуска для 7–8 — это радиальный размер. Размеры округляются до тысячных.</p>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const SVG_NS = "http://www.w3.org/2000/svg";
+      const EMPTY = "—";
+      const NUMBER = "Введите число больше нуля";
+      const COUNT_INT = "Число отверстий — целое";
+      const COUNT_MIN = "Не меньше трёх отверстий";
+      const TOLERANCE = "Допуск — число от нуля";
+
+      const mm = new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
+      const deg = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 });
+
+      const byId = (id) => document.getElementById(id);
+      const all = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+      const round = (value) => Math.round(value * 10) / 10;
+
+      const shareInputs = all("[data-share]");
+      const inputOf = (key) => shareInputs.find((input) => input.dataset.share === key) || null;
+
+      /* --- Ввод --- */
+
+      function readNumber(input, allowZero = false) {
+        const cleaned = input.value
+          .replace(/[\s\u00a0\u202f]/g, "")
+          .replace(/,/g, ".")
+          .replace(/\.$/, "");
+
+        if (cleaned === "") {
+          return { empty: true };
+        }
+        if (!/^\d*\.?\d+$/.test(cleaned)) {
+          return { error: NUMBER };
+        }
+
+        const value = Number(cleaned);
+        if (!Number.isFinite(value) || (allowZero ? value < 0 : value <= 0)) {
+          return { error: NUMBER };
+        }
+        return { value };
+      }
+
+      function readCount(input) {
+        const parsed = readNumber(input);
+        if (parsed.error || parsed.empty) {
+          return parsed;
+        }
+        if (!Number.isInteger(parsed.value)) {
+          return { error: COUNT_INT };
+        }
+        if (parsed.value < 3) {
+          return { error: COUNT_MIN };
+        }
+        return parsed;
+      }
+
+      function readTolerance(input) {
+        const parsed = readNumber(input, true);
+        if (parsed.empty) {
+          return parsed;
+        }
+        if (parsed.error) {
+          return { error: TOLERANCE };
+        }
+        return parsed;
+      }
+
+      const readers = { count: readCount, tolerance: readTolerance };
+
+      function sharedValue(key) {
+        const input = inputOf(key);
+        if (!input) {
+          return { empty: true };
+        }
+        return (readers[key] || readNumber)(input);
+      }
+
+      function sharedNumber(key) {
+        const parsed = sharedValue(key);
+        return parsed.value === undefined ? null : parsed.value;
+      }
+
+      function hintOf(input) {
+        const id = input.getAttribute("aria-describedby");
+        return id ? byId(id) : null;
+      }
+
+      function applyMessage(input, message) {
+        const hint = hintOf(input);
+        if (hint) {
+          hint.textContent = message;
+          hint.hidden = !message;
+        }
+        if (message) {
+          input.setAttribute("aria-invalid", "true");
+        } else {
+          input.removeAttribute("aria-invalid");
+        }
+      }
+
+      function messageFor(key, message) {
+        shareInputs.filter((input) => input.dataset.share === key).forEach((input) => applyMessage(input, message));
+      }
+
+      /* --- Схемы --- */
+
+      const FIG = { width: 300, height: 196, cx: 150, cy: 94, maxR: 82 };
+
+      function clearNode(node) {
+        while (node.firstChild) {
+          node.removeChild(node.firstChild);
+        }
+      }
+
+      function svgEl(name, attrs, parent) {
+        const node = document.createElementNS(SVG_NS, name);
+        Object.keys(attrs).forEach((key) => node.setAttribute(key, attrs[key]));
+        parent.appendChild(node);
+        return node;
+      }
+
+      function svgText(parent, x, y, content, className, anchor) {
+        const node = svgEl(
+          "text",
+          { x: round(x), y: round(y), class: className, "text-anchor": anchor || "middle" },
+          parent
+        );
+        node.textContent = content;
+        return node;
+      }
+
+      function geometry(model) {
+        const odR = model.od ? model.od / 2 : 0;
+        const idR = model.id ? model.id / 2 : 0;
+        const pitchR = model.pitch / 2;
+        const holeR = model.hole ? model.hole / 2 : 0;
+        const outer = Math.max(odR, pitchR + holeR, idR) * 1.06;
+        const scale = FIG.maxR / outer;
+
+        return {
+          odR: odR * scale,
+          idR: idR * scale,
+          pitchR: pitchR * scale,
+          holeR: model.hole ? Math.max(2, holeR * scale) : 5,
+          angles: Array.from({ length: model.count }, (_, index) => -90 + (index * 360) / model.count),
+        };
+      }
+
+      function pointAt(angle, radius) {
+        const rad = (angle * Math.PI) / 180;
+        return {
+          x: FIG.cx + radius * Math.cos(rad),
+          y: FIG.cy + radius * Math.sin(rad),
+        };
+      }
+
+      function drawFlange(svg, state, focus) {
+        if (state.odR) {
+          svgEl("circle", { cx: FIG.cx, cy: FIG.cy, r: round(state.odR), class: "f-part" }, svg);
+        }
+        if (state.idR) {
+          svgEl("circle", { cx: FIG.cx, cy: FIG.cy, r: round(state.idR), class: "f-bore" }, svg);
+        }
+        svgEl("circle", { cx: FIG.cx, cy: FIG.cy, r: round(state.pitchR), class: "f-pitch" }, svg);
+
+        state.angles.forEach((angle, index) => {
+          const point = pointAt(angle, state.pitchR);
+          svgEl(
+            "circle",
+            {
+              cx: round(point.x),
+              cy: round(point.y),
+              r: round(state.holeR),
+              class: focus.includes(index) ? "f-hole f-hole--focus" : "f-hole",
+            },
+            svg
+          );
+        });
+      }
+
+      /* Размерная линия между двумя точками: сноски, засечки и номер. */
+      function dimension(svg, from, to, offset, label, options = {}) {
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const length = Math.hypot(dx, dy) || 1;
+        const ux = dx / length;
+        const uy = dy / length;
+        const nx = -uy;
+        const ny = ux;
+
+        const ax = from.x + nx * offset;
+        const ay = from.y + ny * offset;
+        const bx = to.x + nx * offset;
+        const by = to.y + ny * offset;
+
+        const variant = options.variant || "";
+        const lineClass =
+          "f-dim" + (options.soft ? " f-dim--soft" : "") + (variant ? " f-dim--" + variant : "");
+        const badgeClass = "f-badge" + (variant ? " f-badge--" + variant : "");
+        const textClass = "f-badge-text" + (variant ? " f-badge-text--" + variant : "");
+
+        svgEl("line", { x1: round(from.x), y1: round(from.y), x2: round(ax), y2: round(ay), class: "f-ext" }, svg);
+        svgEl("line", { x1: round(to.x), y1: round(to.y), x2: round(bx), y2: round(by), class: "f-ext" }, svg);
+        svgEl("line", { x1: round(ax), y1: round(ay), x2: round(bx), y2: round(by), class: lineClass }, svg);
+
+        const tick = 4;
+        const tx = (ux + nx) * tick;
+        const ty = (uy + ny) * tick;
+        svgEl("line", { x1: round(ax - tx), y1: round(ay - ty), x2: round(ax + tx), y2: round(ay + ty), class: lineClass }, svg);
+        svgEl("line", { x1: round(bx - tx), y1: round(by - ty), x2: round(bx + tx), y2: round(by + ty), class: lineClass }, svg);
+
+        /* Номер: либо рядом с линией, либо снаружи от центра детали — чтобы не лез в отверстия. */
+        const mx = (ax + bx) / 2;
+        const my = (ay + by) / 2;
+        let lx = mx + nx * (offset >= 0 ? 14 : -14);
+        let ly = my + ny * (offset >= 0 ? 14 : -14);
+
+        if (!options.normalBadge) {
+          let ox = mx - FIG.cx;
+          let oy = my - FIG.cy;
+          let distance = Math.hypot(ox, oy);
+          if (distance < 10) {
+            ox = nx;
+            oy = ny;
+            distance = 1;
+          }
+          lx = mx + (ox / distance) * 15;
+          ly = my + (oy / distance) * 15;
+        }
+
+        svgEl("circle", { cx: round(lx), cy: round(ly), r: 8, class: badgeClass }, svg);
+        svgText(svg, lx, ly + 3.4, label, textClass);
+      }
+
+      function unitVector(from, to) {
+        const dx = to.x - from.x;
+        const dy = to.y - from.y;
+        const length = Math.hypot(dx, dy) || 1;
+        return { x: dx / length, y: dy / length };
+      }
+
+      function shift(point, vector, distance) {
+        return { x: point.x + vector.x * distance, y: point.y + vector.y * distance };
+      }
+
+      /* Пара отверстий: размер по внешним и по внутренним кромкам. */
+      function drawPair(svg, state, model, firstIndex, secondIndex, labels, offset) {
+        clearNode(svg);
+        drawFlange(svg, state, [firstIndex, secondIndex % model.count]);
+
+        const first = pointAt(state.angles[firstIndex], state.pitchR);
+        const second = pointAt(state.angles[secondIndex % model.count], state.pitchR);
+        const u = unitVector(first, second);
+
+        dimension(svg, shift(first, u, -state.holeR), shift(second, u, state.holeR), offset, labels[0], { variant: "a" });
+        dimension(svg, shift(first, u, state.holeR), shift(second, u, -state.holeR), -offset, labels[1], { variant: "b" });
+      }
+
+      function renderChord(svg, model) {
+        clearNode(svg);
+        const state = geometry(model);
+        drawFlange(svg, state, [0, 1, 2 % model.count]);
+
+        const first = pointAt(state.angles[0], state.pitchR);
+        const second = pointAt(state.angles[1], state.pitchR);
+        const third = pointAt(state.angles[2 % model.count], state.pitchR);
+
+        dimension(svg, first, second, -15, "c₁", { variant: "a" });
+        if (model.count > 2) {
+          dimension(svg, first, third, -32, "c₂", { soft: true, normalBadge: true });
+        }
+
+        const radius = Math.min(34, state.pitchR * 0.45);
+        const arcStart = pointAt(state.angles[0], radius);
+        const arcEnd = pointAt(state.angles[1], radius);
+        svgEl(
+          "path",
+          {
+            d:
+              "M" + round(arcStart.x) + " " + round(arcStart.y) +
+              "A" + round(radius) + " " + round(radius) + " 0 0 1 " + round(arcEnd.x) + " " + round(arcEnd.y),
+            class: "f-arc",
+          },
+          svg
+        );
+
+        const phi = pointAt(state.angles[0] + 180 / model.count, radius + 15);
+        svgText(svg, phi.x, phi.y + 3.5, "φ", "f-note");
+      }
+
+      function renderMark(svg, model, outer, inner) {
+        clearNode(svg);
+        const state = geometry(model);
+        drawFlange(svg, state, [0]);
+
+        const hole = pointAt(state.angles[0], state.pitchR);
+
+        if (outer && state.odR) {
+          dimension(svg, { x: FIG.cx, y: FIG.cy - state.odR }, hole, -16, "1", { variant: "a", normalBadge: true });
+        }
+        if (inner && state.idR) {
+          dimension(svg, { x: FIG.cx, y: FIG.cy - state.idR }, hole, -16, "2", { variant: "b", normalBadge: true });
+        }
+      }
+
+      function renderOpposite(svg, model, steps) {
+        const state = geometry(model);
+        drawPair(svg, state, model, 0, steps, ["1", "2"], Math.max(22, state.idR + 12));
+      }
+
+      /* Крупный фрагмент: два отверстия и два размера между ними. */
+      function renderPairZoom(svg, model, steps, labels) {
+        clearNode(svg);
+
+        const pitch = model.pitch;
+        const hole = model.hole || pitch * 0.06;
+        const angle = (Math.PI * 2 * steps) / model.count;
+        const chordMm = pitch * Math.sin(angle / 2);
+        const scale = Math.min(232 / chordMm, 9);
+        const holeR = Math.max(4, (hole / 2) * scale);
+        const chordPx = chordMm * scale;
+        const pitchR = (pitch / 2) * scale;
+        const sagitta = Math.sqrt(Math.max(pitchR * pitchR - (chordPx / 2) * (chordPx / 2), 0));
+
+        const left = { x: FIG.cx - chordPx / 2, y: FIG.cy };
+        const right = { x: FIG.cx + chordPx / 2, y: FIG.cy };
+
+        /* Дуга центровой окружности: круг с центром ниже хорды, лишнее обрежет кадр. */
+        svgEl("circle", { cx: FIG.cx, cy: round(FIG.cy + sagitta), r: round(pitchR), class: "f-pitch" }, svg);
+
+        svgEl("circle", { cx: round(left.x), cy: round(left.y), r: round(holeR), class: "f-hole f-hole--focus" }, svg);
+        svgEl("circle", { cx: round(right.x), cy: round(right.y), r: round(holeR), class: "f-hole f-hole--focus" }, svg);
+
+        dimension(svg, { x: left.x - holeR, y: left.y }, { x: right.x + holeR, y: right.y }, 14, labels[0], { variant: "a" });
+        dimension(svg, { x: left.x + holeR, y: left.y }, { x: right.x - holeR, y: right.y }, -14, labels[1], { variant: "b" });
+      }
+
+      function renderAdjacent(svg, model) {
+        renderPairZoom(svg, model, 1, ["3", "4"]);
+      }
+
+      function renderThrough(svg, model) {
+        renderPairZoom(svg, model, 2, ["5", "6"]);
+      }
+
+      function renderEdge(svg, model) {
+        clearNode(svg);
+        const state = geometry(model);
+        drawFlange(svg, state, [0]);
+
+        const hole = pointAt(state.angles[0], state.pitchR);
+
+        if (state.odR) {
+          dimension(
+            svg,
+            { x: FIG.cx, y: FIG.cy - state.odR },
+            { x: hole.x, y: hole.y - state.holeR },
+            -16,
+            "7",
+            { variant: "a", normalBadge: true }
+          );
+        }
+        if (state.idR) {
+          dimension(
+            svg,
+            { x: FIG.cx, y: FIG.cy - state.idR },
+            { x: hole.x, y: hole.y + state.holeR },
+            -16,
+            "8",
+            { variant: "b", normalBadge: true }
+          );
+        }
+      }
+
+      /* --- Карточка «шаг отверстий» --- */
+
+      function updateChord(pitch, count) {
+        const figure = byId("chord-figure");
+
+        if (!pitch.value || !count.value) {
+          byId("chord-step").textContent = EMPTY;
+          byId("chord-through").textContent = EMPTY;
+          byId("chord-angle").textContent = EMPTY;
+          figure.hidden = true;
+          return;
+        }
+
+        const step = pitch.value * Math.sin(Math.PI / count.value);
+        const through = pitch.value * Math.sin((2 * Math.PI) / count.value);
+
+        byId("chord-step").textContent = mm.format(step);
+        byId("chord-through").textContent = mm.format(through) + " мм";
+        byId("chord-angle").textContent = deg.format(360 / count.value) + "°";
+
+        figure.hidden = false;
+        renderChord(figure.querySelector("svg"), { pitch: pitch.value, count: count.value, hole: 0, od: 0, id: 0 });
+      }
+
+      /* --- Карточка «разметка» --- */
+
+      function updateMark(pitch, odDrawing, odActual, idDrawing, idActual) {
+        const figure = byId("mark-figure");
+        const outerValue = byId("mark-outer");
+        const innerValue = byId("mark-inner");
+        const outerNote = byId("mark-outer-note");
+        const innerNote = byId("mark-inner-note");
+
+        const od = odActual.value ?? odDrawing.value ?? null;
+        const id = idActual.value ?? idDrawing.value ?? null;
+
+        let outer = null;
+        let outerByDrawing = null;
+        let inner = null;
+        let innerByDrawing = null;
+
+        if (pitch.value && od) {
+          outer = (od - pitch.value) / 2;
+          if (odDrawing.value) {
+            outerByDrawing = (odDrawing.value - pitch.value) / 2;
+          }
+        }
+        if (pitch.value && id) {
+          inner = (pitch.value - id) / 2;
+          if (idDrawing.value) {
+            innerByDrawing = (pitch.value - idDrawing.value) / 2;
+          }
+        }
+
+        outerValue.textContent = outer === null ? EMPTY : mm.format(outer);
+        innerValue.textContent = inner === null ? EMPTY : mm.format(inner);
+
+        const outerDiff = outer !== null && outerByDrawing !== null && Math.abs(outer - outerByDrawing) > 0.0005;
+        const innerDiff = inner !== null && innerByDrawing !== null && Math.abs(inner - innerByDrawing) > 0.0005;
+
+        outerNote.hidden = !outerDiff;
+        outerNote.textContent = outerDiff ? "по чертежу: " + mm.format(outerByDrawing) + " мм" : "";
+        innerNote.hidden = !innerDiff;
+        innerNote.textContent = innerDiff ? "по чертежу: " + mm.format(innerByDrawing) + " мм" : "";
+
+        figure.hidden = !(pitch.value && (outer !== null || inner !== null));
+        if (!figure.hidden) {
+          renderMark(
+            figure.querySelector("svg"),
+            { pitch: pitch.value, count: 8, hole: 0, od: od || 0, id: id || 0 },
+            outer !== null,
+            inner !== null
+          );
+        }
+      }
+
+      /* --- Карточка «контроль» --- */
+
+      function setRow(index, value, drawing, tolerance) {
+        byId("r" + index).textContent = value === null ? EMPTY : mm.format(value);
+
+        const limit = byId("r" + index + "-limit");
+        if (value === null || tolerance === null) {
+          limit.hidden = true;
+        } else {
+          limit.hidden = false;
+          limit.textContent =
+            "пределы " + mm.format(value - tolerance) + " … " + mm.format(value + tolerance);
+        }
+
+        const note = byId("r" + index + "-drawing");
+        const differs = value !== null && drawing !== null && Math.abs(value - drawing) > 0.0005;
+        note.hidden = !differs;
+        note.textContent = differs ? "по чертежу: " + mm.format(drawing) + " мм" : "";
+      }
+
+      function updateControl(inputs) {
+        const pitch = inputs.pitch;
+        const count = inputs.count;
+        const hole = inputs.hole;
+        const od = inputs.od;
+        const id = inputs.id;
+        const tolerance = inputs.tolerance;
+
+        const warning = byId("ctrl-warning");
+        const ready = Boolean(pitch.value && count.value && hole.value);
+
+        const odd = ready && count.value % 2 !== 0;
+        const steps = ready ? (odd ? (count.value - 1) / 2 : count.value / 2) : 0;
+
+        byId("name-r1").textContent = odd
+          ? "Внешние кромки · внутренними губками (пара через " + steps + ")"
+          : "Внешние кромки · внутренними губками";
+
+        const figures = { opposite: byId("group-opposite"), adjacent: byId("group-adjacent"), through: byId("group-through"), edge: byId("group-edge") };
+
+        if (!ready) {
+          [1, 2, 3, 4, 5, 6, 7, 8].forEach((index) => setRow(index, null, null, null));
+          warning.hidden = true;
+          Object.values(figures).forEach((group) => {
+            group.hidden = true;
+          });
+          return;
+        }
+
+        const chord = (stepCount) => pitch.value * Math.sin((Math.PI * stepCount) / count.value);
+        const adjacent = chord(1);
+        const through = chord(2);
+        const opposite = chord(steps);
+        const holeActual = hole.value;
+
+        const drawingHole = inputs.holeDrawing.value ?? hole.value;
+        const drawingOd = inputs.odDrawing.value;
+        const drawingId = inputs.idDrawing.value;
+
+        setRow(1, opposite + holeActual, opposite + drawingHole, tolerance.value ?? null);
+        setRow(2, opposite - holeActual, opposite - drawingHole, tolerance.value ?? null);
+        setRow(3, adjacent + holeActual, adjacent + drawingHole, tolerance.value ?? null);
+        setRow(4, adjacent - holeActual, adjacent - drawingHole, tolerance.value ?? null);
+        setRow(5, through + holeActual, through + drawingHole, tolerance.value ?? null);
+        setRow(6, through - holeActual, through - drawingHole, tolerance.value ?? null);
+
+        const edgeTolerance = tolerance.value === undefined ? null : tolerance.value / 2;
+
+        setRow(
+          7,
+          od ? (od - pitch.value - holeActual) / 2 : null,
+          od && drawingOd ? (drawingOd - pitch.value - drawingHole) / 2 : null,
+          edgeTolerance
+        );
+        setRow(
+          8,
+          id ? (pitch.value - holeActual - id) / 2 : null,
+          id && drawingId ? (pitch.value - drawingHole - drawingId) / 2 : null,
+          edgeTolerance
+        );
+
+        /* Схемы */
+        const model = {
+          pitch: pitch.value,
+          count: count.value,
+          hole: holeActual,
+          od: od || 0,
+          id: id || 0,
+        };
+
+        figures.opposite.hidden = false;
+        figures.adjacent.hidden = false;
+        figures.through.hidden = false;
+        figures.edge.hidden = !(od || id);
+
+        renderOpposite(figures.opposite.querySelector("svg"), model, steps);
+        renderAdjacent(figures.adjacent.querySelector("svg"), model);
+        renderThrough(figures.through.querySelector("svg"), model);
+        renderEdge(figures.edge.querySelector("svg"), model);
+
+        /* Предупреждения о невозможной геометрии */
+        const messages = [];
+        if (od && pitch.value + holeActual > od + 0.0005) {
+          messages.push("Отверстия выходят за наружную кромку детали.");
+        }
+        if (id && pitch.value - holeActual < id - 0.0005) {
+          messages.push("Отверстия заходят за внутреннюю расточку.");
+        }
+        if (adjacent - holeActual < -0.0005) {
+          messages.push("Соседние отверстия пересекаются: шаг меньше диаметра отверстия.");
+        }
+
+        warning.hidden = messages.length === 0;
+        warning.textContent = messages.join(" ");
+      }
+
+      /* --- Общий пересчёт --- */
+
+      function updateAll() {
+        const pitch = sharedValue("pitch");
+        const count = sharedValue("count");
+        const odDrawing = sharedValue("od-drawing");
+        const odActual = sharedValue("od-actual");
+        const idDrawing = sharedValue("id-drawing");
+        const idActual = sharedValue("id-actual");
+        const holeDrawing = sharedValue("hole-drawing");
+        const holeActual = sharedValue("hole-actual");
+        const tolerance = sharedValue("tolerance");
+
+        messageFor("pitch", pitch.error || "");
+        messageFor("count", count.error || "");
+        messageFor("od-drawing", odDrawing.error || "");
+        messageFor("od-actual", odActual.error || "");
+        messageFor("id-drawing", idDrawing.error || "");
+        messageFor("id-actual", idActual.error || "");
+        messageFor("hole-drawing", holeDrawing.error || "");
+        messageFor("hole-actual", holeActual.error || "");
+        messageFor("tolerance", tolerance.error || "");
+
+        updateChord(pitch, count);
+        updateMark(pitch, odDrawing, odActual, idDrawing, idActual);
+        updateControl({
+          pitch,
+          count,
+          hole: holeActual.value !== undefined ? holeActual : holeDrawing,
+          holeDrawing,
+          od: odActual.value ?? odDrawing.value ?? null,
+          id: idActual.value ?? idDrawing.value ?? null,
+          odDrawing: odDrawing,
+          idDrawing: idDrawing,
+          tolerance,
+        });
+      }
+
+      /* --- Связывание полей: одно значение на все карточки --- */
+
+      shareInputs.forEach((input) => {
+        input.addEventListener("input", () => {
+          shareInputs
+            .filter((peer) => peer !== input && peer.dataset.share === input.dataset.share)
+            .forEach((peer) => {
+              peer.value = input.value;
+            });
+          updateAll();
+        });
+      });
+
+      updateAll();
+    })();
+  </script>
+
+  <!-- Cloudflare Web Analytics -->
+  <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "c6d6e0b0d92b46e0b3321fcfb130423d"}'></script>
+  <!-- End Cloudflare Web Analytics -->
+</body>
+</html>
+
