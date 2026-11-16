@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0b0d12">
   <title>Расчёт конуса — Металлобработка</title>
-  <meta name="description" content="Угол конуса по двум диаметрам и длине и обратный расчёт второго диаметра по углу: угол на сторону или общий, от оси или от торца.">
+  <meta name="description" content="Угол конуса по двум диаметрам и длине, второй диаметр и длина конуса по углу. Угол в градусах, минутах и секундах или конусностью; схемы перестраиваются по введённым размерам.">
   <link rel="canonical" href="https://keezuf.github.io/apps/metalworking/cone/">
   <link rel="icon" href="../../../assets/img/favicon.svg?v=f24afffb" type="image/svg+xml">
   <link rel="stylesheet" href="../../../assets/css/base.css?v=f24afffb">
@@ -14,11 +14,29 @@
 <body class="app-page">
   <main class="app-shell">
     <h1 class="visually-hidden">Расчёт конуса для токарной обработки</h1>
-    <p class="app-lead">Угол конуса по двум диаметрам и длине — и обратный расчёт: второй диаметр по углу. Угол задаётся на сторону или общий, от оси или от торца.</p>
+    <p class="app-lead">Три расчёта: угол по двум диаметрам и длине, второй диаметр по углу и длина конуса по двум диаметрам и углу. Угол задаётся в градусах, в градусах-минутах-секундах или конусностью.</p>
 
     <style>
-      /* Расчёт конуса: две карточки — угол по размерам и диаметр по углу.
+      /* Расчёт конуса: три карточки — угол, диаметр по углу, длина по углу.
          Стили живут в самой странице приложения и используют токены base.css. */
+      [hidden] {
+        display: none !important;
+      }
+
+      .cone-toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        gap: 0.5rem 1.25rem;
+        margin-top: 1rem;
+      }
+
+      .cone-toolbar-note {
+        color: var(--text-dim);
+        font-size: 0.8rem;
+        line-height: 1.4;
+      }
+
       .calc-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
@@ -31,6 +49,7 @@
         display: flex;
         flex-direction: column;
         gap: 0.85rem;
+        min-width: 0;
         padding: clamp(0.95rem, 2.4vw, 1.3rem);
         border: 1px solid var(--line);
         border-radius: var(--radius);
@@ -58,6 +77,7 @@
       .field {
         display: grid;
         gap: 0.3rem;
+        min-width: 0;
       }
 
       .field-label {
@@ -99,11 +119,13 @@
         font-variant-numeric: tabular-nums;
       }
 
-      .field-input:focus {
+      .field-input:focus,
+      .dms-input:focus {
         outline: none;
       }
 
-      .field-input::placeholder {
+      .field-input::placeholder,
+      .dms-input::placeholder {
         color: var(--text-dim);
       }
 
@@ -121,14 +143,53 @@
         line-height: 1.4;
       }
 
-      .field-hint[hidden] {
-        display: none;
+      /* Угол в градусах-минутах-секундах: три узких поля в ряд. */
+      .dms-row {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.35rem;
+      }
+
+      .dms-cell {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        min-width: 0;
+        padding-inline: 0.5rem;
+        border: 1px solid var(--line-strong);
+        border-radius: var(--radius-sm);
+        background: rgba(8, 11, 17, 0.6);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+
+      .dms-cell:hover {
+        border-color: #4a5c80;
+      }
+
+      .dms-cell:focus-within {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(143, 176, 255, 0.18);
+      }
+
+      .dms-input {
+        width: 100%;
+        min-width: 0;
+        padding: 0.5rem 0;
+        border: 0;
+        background: none;
+        color: var(--text);
+        font-family: var(--font-mono);
+        font-size: 1rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .dms-cell .field-unit {
+        font-size: 0.7rem;
       }
 
       /* Переключатели «на сторону / общий», «от оси / от торца» — ряд чипов. */
       .seg {
-        display: grid;
-        gap: 0.3rem;
+        min-inline-size: 0;
         margin: 0;
         padding: 0;
         border: 0;
@@ -145,6 +206,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 0.35rem;
+        margin-top: 0.3rem;
       }
 
       .seg-option {
@@ -262,10 +324,6 @@
         line-height: 1.45;
       }
 
-      .calc-alert[hidden] {
-        display: none;
-      }
-
       .calc-formula {
         margin-top: 0.45rem;
         color: var(--text-dim);
@@ -274,34 +332,23 @@
         line-height: 1.5;
       }
 
-      /* Схема конуса: направление переключается атрибутом data-dir. */
+      /* Схема конуса: перестраивается по текущим значениям карточки. */
       .cone-figure {
-        margin: 0.1rem 0 0;
+        margin: 0;
       }
 
       .cone-fig {
         display: block;
         width: 100%;
-        max-width: 22rem;
         height: auto;
-      }
-
-      .cone-fig--left {
-        display: none;
-      }
-
-      .cone-figure[data-dir="left"] .cone-fig--right {
-        display: none;
-      }
-
-      .cone-figure[data-dir="left"] .cone-fig--left {
-        display: block;
+        max-width: 26rem;
       }
 
       .cone-shape {
         fill: rgba(143, 176, 255, 0.1);
         stroke: var(--accent);
         stroke-width: 1.5;
+        stroke-linejoin: round;
       }
 
       .cone-axis {
@@ -310,14 +357,15 @@
         stroke-dasharray: 5 4;
       }
 
-      .cone-dim line {
+      .cone-dim {
+        fill: none;
         stroke: var(--line-strong);
         stroke-width: 1;
       }
 
       .cone-angle {
         fill: none;
-        stroke: var(--text-dim);
+        stroke: var(--text-muted);
         stroke-width: 1;
       }
 
@@ -342,6 +390,23 @@
         line-height: 1.55;
       }
     </style>
+
+    <div class="cone-toolbar">
+      <fieldset class="seg">
+        <legend class="seg-legend">Направление конуса</legend>
+        <div class="seg-track">
+          <label class="seg-option">
+            <input type="radio" name="cone-dir" value="left" checked>
+            <span>влево</span>
+          </label>
+          <label class="seg-option">
+            <input type="radio" name="cone-dir" value="right">
+            <span>вправо</span>
+          </label>
+        </div>
+      </fieldset>
+      <p class="cone-toolbar-note">Меняет только рисунки, на расчёт не влияет.</p>
+    </div>
 
     <div class="calc-grid">
       <section class="calc-card" aria-labelledby="cone-angle-title">
@@ -385,6 +450,10 @@
           </output>
           <dl class="calc-extra">
             <div>
+              <dt>Угол на сторону в ° ′ ″</dt>
+              <dd data-out="a-dms">—</dd>
+            </div>
+            <div>
               <dt>Общий угол (2α)</dt>
               <dd data-out="a-full">—</dd>
             </div>
@@ -404,79 +473,49 @@
           <p class="calc-formula">tan α = (D − d) / (2 · L)</p>
         </div>
 
-        <fieldset class="seg">
-          <legend class="seg-legend">Направление конуса</legend>
-          <div class="seg-track">
-            <label class="seg-option">
-              <input type="radio" name="cone-dir" value="right" checked>
-              <span>вправо</span>
-            </label>
-            <label class="seg-option">
-              <input type="radio" name="cone-dir" value="left">
-              <span>влево</span>
-            </label>
-          </div>
-        </fieldset>
-
-        <figure class="cone-figure" data-figure data-dir="right">
-          <svg class="cone-fig cone-fig--right" viewBox="0 0 352 176" role="img" aria-labelledby="cone-fig-right-title">
-            <title id="cone-fig-right-title">Конус: больший диаметр D справа, меньший d слева, длина L, угол на сторону α</title>
-            <polygon class="cone-shape" points="88,62 272,34 272,134 88,106"></polygon>
-            <line class="cone-axis" x1="84" y1="84" x2="276" y2="84"></line>
-            <g class="cone-dim">
-              <line x1="76" y1="62" x2="76" y2="106"></line>
-              <line x1="70" y1="62" x2="82" y2="62"></line>
-              <line x1="70" y1="106" x2="82" y2="106"></line>
-              <line x1="284" y1="34" x2="284" y2="134"></line>
-              <line x1="278" y1="34" x2="290" y2="34"></line>
-              <line x1="278" y1="134" x2="290" y2="134"></line>
-              <line x1="88" y1="158" x2="272" y2="158"></line>
-              <line x1="88" y1="152" x2="88" y2="164"></line>
-              <line x1="272" y1="152" x2="272" y2="164"></line>
-            </g>
-            <path class="cone-angle" d="M 198 84 A 110 110 0 0 0 196.75 67.45"></path>
+        <figure class="cone-figure" data-figure="a" hidden>
+          <svg class="cone-fig" viewBox="0 0 320 170" role="img" aria-label="Схема конуса по введённым размерам" data-cone="a">
+            <polygon class="cone-shape" data-el="shape"></polygon>
+            <line class="cone-axis" data-el="axis"></line>
+            <path class="cone-dim" data-el="dim-small"></path>
+            <path class="cone-dim" data-el="dim-big"></path>
+            <path class="cone-dim" data-el="dim-length"></path>
+            <path class="cone-angle" data-el="angle"></path>
             <g class="cone-label">
-              <text x="66" y="88" text-anchor="end">d</text>
-              <text x="296" y="88" text-anchor="start">D</text>
-              <text x="180" y="147" text-anchor="middle">L</text>
-              <text x="206" y="71">α</text>
+              <text data-el="label-big">D</text>
+              <text data-el="label-small">d</text>
+              <text data-el="label-length">L</text>
+              <text data-el="label-alpha">α</text>
             </g>
           </svg>
-
-          <svg class="cone-fig cone-fig--left" viewBox="0 0 352 176" role="img" aria-labelledby="cone-fig-left-title">
-            <title id="cone-fig-left-title">Конус: больший диаметр D слева, меньший d справа, длина L, угол на сторону α</title>
-            <polygon class="cone-shape" points="264,62 80,34 80,134 264,106"></polygon>
-            <line class="cone-axis" x1="76" y1="84" x2="268" y2="84"></line>
-            <g class="cone-dim">
-              <line x1="276" y1="62" x2="276" y2="106"></line>
-              <line x1="270" y1="62" x2="282" y2="62"></line>
-              <line x1="270" y1="106" x2="282" y2="106"></line>
-              <line x1="68" y1="34" x2="68" y2="134"></line>
-              <line x1="62" y1="34" x2="74" y2="34"></line>
-              <line x1="62" y1="134" x2="74" y2="134"></line>
-              <line x1="80" y1="158" x2="264" y2="158"></line>
-              <line x1="80" y1="152" x2="80" y2="164"></line>
-              <line x1="264" y1="152" x2="264" y2="164"></line>
-            </g>
-            <path class="cone-angle" d="M 154 84 A 110 110 0 0 1 155.25 67.45"></path>
-            <g class="cone-label">
-              <text x="286" y="88" text-anchor="start">d</text>
-              <text x="56" y="88" text-anchor="end">D</text>
-              <text x="176" y="147" text-anchor="middle">L</text>
-              <text x="146" y="71" text-anchor="end">α</text>
-            </g>
-          </svg>
-
-          <figcaption class="cone-caption">α — угол на сторону, между осью и образующей. D — больший диаметр, d — меньший, L — длина конуса. Направление меняет только рисунок, на значения не влияет.</figcaption>
+          <figcaption class="cone-caption">α — угол на сторону, между осью и образующей.</figcaption>
         </figure>
       </section>
 
-      <section class="calc-card" aria-labelledby="cone-diameter-title">
+      <section class="calc-card" aria-labelledby="cone-diameter-title" data-card="b">
         <h2 class="calc-title" id="cone-diameter-title">Диаметр по углу</h2>
         <p class="calc-note">Угол, длина конуса и один диаметр дают второй диаметр.</p>
 
         <div class="calc-fields">
-          <div class="field">
+          <fieldset class="seg">
+            <legend class="seg-legend">Как задан угол</legend>
+            <div class="seg-track">
+              <label class="seg-option">
+                <input type="radio" name="b-angle-mode" value="deg" checked>
+                <span>градусы</span>
+              </label>
+              <label class="seg-option">
+                <input type="radio" name="b-angle-mode" value="dms">
+                <span>° ′ ″</span>
+              </label>
+              <label class="seg-option">
+                <input type="radio" name="b-angle-mode" value="taper">
+                <span>конусность</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="field" data-angle-block="deg">
             <label class="field-label" for="b-angle">Угол, °</label>
             <div class="field-box">
               <input class="field-input" id="b-angle" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="10" value="10" aria-describedby="hint-b-angle">
@@ -485,29 +524,60 @@
             <p class="field-hint" id="hint-b-angle" hidden></p>
           </div>
 
-          <fieldset class="seg">
+          <div class="field" data-angle-block="dms" hidden>
+            <span class="field-label" id="b-angle-dms-label">Угол, ° ′ ″</span>
+            <div class="dms-row" role="group" aria-labelledby="b-angle-dms-label">
+              <div class="dms-cell">
+                <label class="visually-hidden" for="b-angle-deg">Градусы</label>
+                <input class="dms-input" id="b-angle-deg" type="text" inputmode="numeric" autocomplete="off" placeholder="10">
+                <span class="field-unit" aria-hidden="true">°</span>
+              </div>
+              <div class="dms-cell">
+                <label class="visually-hidden" for="b-angle-min">Минуты</label>
+                <input class="dms-input" id="b-angle-min" type="text" inputmode="numeric" autocomplete="off" placeholder="30">
+                <span class="field-unit" aria-hidden="true">′</span>
+              </div>
+              <div class="dms-cell">
+                <label class="visually-hidden" for="b-angle-sec">Секунды</label>
+                <input class="dms-input" id="b-angle-sec" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+                <span class="field-unit" aria-hidden="true">″</span>
+              </div>
+            </div>
+            <p class="field-hint" id="hint-b-angle-dms" hidden></p>
+          </div>
+
+          <div class="field" data-angle-block="taper" hidden>
+            <label class="field-label" for="b-taper">Конусность</label>
+            <div class="field-box">
+              <span class="field-unit" aria-hidden="true">1 :</span>
+              <input class="field-input" id="b-taper" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="2,5" aria-describedby="hint-b-taper">
+            </div>
+            <p class="field-hint" id="hint-b-taper" hidden></p>
+          </div>
+
+          <fieldset class="seg" data-angle-block="variants">
             <legend class="seg-legend">Угол задан</legend>
             <div class="seg-track">
               <label class="seg-option">
-                <input type="radio" name="angle-kind" value="side" checked>
+                <input type="radio" name="b-angle-kind" value="side" checked>
                 <span>на сторону</span>
               </label>
               <label class="seg-option">
-                <input type="radio" name="angle-kind" value="full">
+                <input type="radio" name="b-angle-kind" value="full">
                 <span>общий</span>
               </label>
             </div>
           </fieldset>
 
-          <fieldset class="seg">
+          <fieldset class="seg" data-angle-block="variants">
             <legend class="seg-legend">Отсчёт угла</legend>
             <div class="seg-track">
               <label class="seg-option">
-                <input type="radio" name="angle-ref" value="axis" checked>
+                <input type="radio" name="b-angle-ref" value="axis" checked>
                 <span>от оси</span>
               </label>
               <label class="seg-option">
-                <input type="radio" name="angle-ref" value="face">
+                <input type="radio" name="b-angle-ref" value="face">
                 <span>от торца</span>
               </label>
             </div>
@@ -517,11 +587,11 @@
             <legend class="seg-legend">Известен диаметр</legend>
             <div class="seg-track">
               <label class="seg-option">
-                <input type="radio" name="diameter-known" value="big" checked>
+                <input type="radio" name="b-known" value="big" checked>
                 <span>больший</span>
               </label>
               <label class="seg-option">
-                <input type="radio" name="diameter-known" value="small">
+                <input type="radio" name="b-known" value="small">
                 <span>меньший</span>
               </label>
             </div>
@@ -547,16 +617,20 @@
         </div>
 
         <div class="calc-result">
-          <p class="calc-result-label" data-label>Второй диаметр</p>
-          <output class="calc-value" for="b-angle b-diameter b-length" aria-live="polite" data-output="b-diameter">
+          <p class="calc-result-label" data-label="b">Второй диаметр</p>
+          <output class="calc-value" for="b-diameter b-length" aria-live="polite" data-output="b-diameter">
             <span class="calc-number" data-value>—</span>
             <span class="calc-unit">мм</span>
           </output>
-          <p class="calc-alert" data-alert hidden></p>
+          <p class="calc-alert" data-alert="b" hidden></p>
           <dl class="calc-extra">
             <div>
               <dt>Угол на сторону от оси</dt>
               <dd data-out="b-half">—</dd>
+            </div>
+            <div>
+              <dt>Угол в ° ′ ″</dt>
+              <dd data-out="b-dms">—</dd>
             </div>
             <div>
               <dt>Общий угол</dt>
@@ -565,10 +639,180 @@
           </dl>
           <p class="calc-formula">d = D − 2 · L · tan α</p>
         </div>
+
+        <figure class="cone-figure" data-figure="b" hidden>
+          <svg class="cone-fig" viewBox="0 0 320 170" role="img" aria-label="Схема конуса по известному и вычисленному диаметру" data-cone="b">
+            <polygon class="cone-shape" data-el="shape"></polygon>
+            <line class="cone-axis" data-el="axis"></line>
+            <path class="cone-dim" data-el="dim-small"></path>
+            <path class="cone-dim" data-el="dim-big"></path>
+            <path class="cone-dim" data-el="dim-length"></path>
+            <path class="cone-angle" data-el="angle"></path>
+            <g class="cone-label">
+              <text data-el="label-big">D</text>
+              <text data-el="label-small">d</text>
+              <text data-el="label-length">L</text>
+              <text data-el="label-alpha">α</text>
+            </g>
+          </svg>
+          <figcaption class="cone-caption">Схема по известному и найденному диаметру.</figcaption>
+        </figure>
+      </section>
+
+      <section class="calc-card" aria-labelledby="cone-length-title" data-card="c">
+        <h2 class="calc-title" id="cone-length-title">Длина по диаметрам и углу</h2>
+        <p class="calc-note">Два диаметра и угол дают длину конуса.</p>
+
+        <div class="calc-fields">
+          <div class="field">
+            <label class="field-label" for="c-big">Больший диаметр D, мм</label>
+            <div class="field-box">
+              <input class="field-input" id="c-big" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="60" value="60" aria-describedby="hint-c-big">
+              <span class="field-unit" aria-hidden="true">мм</span>
+            </div>
+            <p class="field-hint" id="hint-c-big" hidden></p>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="c-small">Меньший диаметр d, мм</label>
+            <div class="field-box">
+              <input class="field-input" id="c-small" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="40" value="40" aria-describedby="hint-c-small">
+              <span class="field-unit" aria-hidden="true">мм</span>
+            </div>
+            <p class="field-hint" id="hint-c-small" hidden></p>
+          </div>
+
+          <fieldset class="seg">
+            <legend class="seg-legend">Как задан угол</legend>
+            <div class="seg-track">
+              <label class="seg-option">
+                <input type="radio" name="c-angle-mode" value="deg" checked>
+                <span>градусы</span>
+              </label>
+              <label class="seg-option">
+                <input type="radio" name="c-angle-mode" value="dms">
+                <span>° ′ ″</span>
+              </label>
+              <label class="seg-option">
+                <input type="radio" name="c-angle-mode" value="taper">
+                <span>конусность</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="field" data-angle-block="deg">
+            <label class="field-label" for="c-angle">Угол, °</label>
+            <div class="field-box">
+              <input class="field-input" id="c-angle" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="10" value="10" aria-describedby="hint-c-angle">
+              <span class="field-unit" aria-hidden="true">°</span>
+            </div>
+            <p class="field-hint" id="hint-c-angle" hidden></p>
+          </div>
+
+          <div class="field" data-angle-block="dms" hidden>
+            <span class="field-label" id="c-angle-dms-label">Угол, ° ′ ″</span>
+            <div class="dms-row" role="group" aria-labelledby="c-angle-dms-label">
+              <div class="dms-cell">
+                <label class="visually-hidden" for="c-angle-deg">Градусы</label>
+                <input class="dms-input" id="c-angle-deg" type="text" inputmode="numeric" autocomplete="off" placeholder="10">
+                <span class="field-unit" aria-hidden="true">°</span>
+              </div>
+              <div class="dms-cell">
+                <label class="visually-hidden" for="c-angle-min">Минуты</label>
+                <input class="dms-input" id="c-angle-min" type="text" inputmode="numeric" autocomplete="off" placeholder="30">
+                <span class="field-unit" aria-hidden="true">′</span>
+              </div>
+              <div class="dms-cell">
+                <label class="visually-hidden" for="c-angle-sec">Секунды</label>
+                <input class="dms-input" id="c-angle-sec" type="text" inputmode="decimal" autocomplete="off" placeholder="0">
+                <span class="field-unit" aria-hidden="true">″</span>
+              </div>
+            </div>
+            <p class="field-hint" id="hint-c-angle-dms" hidden></p>
+          </div>
+
+          <div class="field" data-angle-block="taper" hidden>
+            <label class="field-label" for="c-taper">Конусность</label>
+            <div class="field-box">
+              <span class="field-unit" aria-hidden="true">1 :</span>
+              <input class="field-input" id="c-taper" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="2,5" aria-describedby="hint-c-taper">
+            </div>
+            <p class="field-hint" id="hint-c-taper" hidden></p>
+          </div>
+
+          <fieldset class="seg" data-angle-block="variants">
+            <legend class="seg-legend">Угол задан</legend>
+            <div class="seg-track">
+              <label class="seg-option">
+                <input type="radio" name="c-angle-kind" value="side" checked>
+                <span>на сторону</span>
+              </label>
+              <label class="seg-option">
+                <input type="radio" name="c-angle-kind" value="full">
+                <span>общий</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset class="seg" data-angle-block="variants">
+            <legend class="seg-legend">Отсчёт угла</legend>
+            <div class="seg-track">
+              <label class="seg-option">
+                <input type="radio" name="c-angle-ref" value="axis" checked>
+                <span>от оси</span>
+              </label>
+              <label class="seg-option">
+                <input type="radio" name="c-angle-ref" value="face">
+                <span>от торца</span>
+              </label>
+            </div>
+          </fieldset>
+        </div>
+
+        <div class="calc-result">
+          <p class="calc-result-label">Длина конуса</p>
+          <output class="calc-value" for="c-big c-small" aria-live="polite" data-output="c-length">
+            <span class="calc-number" data-value>—</span>
+            <span class="calc-unit">мм</span>
+          </output>
+          <dl class="calc-extra">
+            <div>
+              <dt>Угол на сторону от оси</dt>
+              <dd data-out="c-half">—</dd>
+            </div>
+            <div>
+              <dt>Угол в ° ′ ″</dt>
+              <dd data-out="c-dms">—</dd>
+            </div>
+            <div>
+              <dt>Общий угол</dt>
+              <dd data-out="c-full">—</dd>
+            </div>
+          </dl>
+          <p class="calc-formula">L = (D − d) / (2 · tan α)</p>
+        </div>
+
+        <figure class="cone-figure" data-figure="c" hidden>
+          <svg class="cone-fig" viewBox="0 0 320 170" role="img" aria-label="Схема конуса по двум диаметрам и углу" data-cone="c">
+            <polygon class="cone-shape" data-el="shape"></polygon>
+            <line class="cone-axis" data-el="axis"></line>
+            <path class="cone-dim" data-el="dim-small"></path>
+            <path class="cone-dim" data-el="dim-big"></path>
+            <path class="cone-dim" data-el="dim-length"></path>
+            <path class="cone-angle" data-el="angle"></path>
+            <g class="cone-label">
+              <text data-el="label-big">D</text>
+              <text data-el="label-small">d</text>
+              <text data-el="label-length">L</text>
+              <text data-el="label-alpha">α</text>
+            </g>
+          </svg>
+          <figcaption class="cone-caption">Схема по двум диаметрам и найденной длине.</figcaption>
+        </figure>
       </section>
     </div>
 
-    <p class="calc-foot">α — угол на сторону: между осью конуса и образующей; 2α — общий угол; 90° − α — угол между образующей и торцом. Конусность — отношение разности диаметров к длине конуса, уклон — половина конусности. Значения на экране округлены.</p>
+    <p class="calc-foot">α — угол на сторону: между осью конуса и образующей; 2α — общий угол; 90° − α — угол между образующей и торцом. Конусность — отношение разности диаметров к длине, задаётся как 1 : X, при этом tan α = 1 / (2 · X). Уклон — половина конусности. Значения на экране округлены.</p>
   </main>
 
   <script>
@@ -577,6 +821,9 @@
 
       const EMPTY_VALUE = "—";
       const NUMBER_MESSAGE = "Введите число больше нуля";
+      const RANGE_MESSAGE = "Угол должен быть больше 0 и меньше ";
+      const DMS_MESSAGE = "Минуты и секунды — целые от 0 до 59";
+      const ALERT_MESSAGE = "Конус с такими данными не получается: второй диаметр выходит за ноль. Уменьшите угол или длину.";
 
       const formatters = new Map();
 
@@ -590,9 +837,27 @@
         return formatters.get(digits).format(value);
       }
 
+      /* Градусы в привычную запись градусы-минуты-секунды. */
+      function formatDms(value) {
+        const total = Math.round(value * 3600);
+        const deg = Math.floor(total / 3600);
+        const min = Math.floor((total % 3600) / 60);
+        const sec = total % 60;
+        return deg + "° " + min + "′ " + sec + "″";
+      }
+
+      const byId = (id) => document.getElementById(id);
+      const all = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+      const round = (value) => Math.round(value * 10) / 10;
+
+      function radioValue(name) {
+        const checked = document.querySelector('input[name="' + name + '"]:checked');
+        return checked ? checked.value : "";
+      }
+
       /* Числа вводят с запятой и пробелами между разрядами — принимаем оба варианта.
          Незаконченный ввод («12,») не считается ошибкой, пока не появилась цифра после разделителя. */
-      function readNumber(input) {
+      function readNumber(input, allowZero = false) {
         const cleaned = input.value
           .replace(/[\s\u00a0\u202f]/g, "")
           .replace(/,/g, ".")
@@ -606,29 +871,263 @@
         }
 
         const value = Number(cleaned);
-        return Number.isFinite(value) && value > 0 ? { value } : { invalid: true };
-      }
-
-      function setHint(target, message) {
-        target.hint.textContent = message;
-        target.hint.hidden = !message;
-
-        if (message) {
-          target.input.setAttribute("aria-invalid", "true");
-        } else {
-          target.input.removeAttribute("aria-invalid");
+        if (!Number.isFinite(value)) {
+          return { invalid: true };
         }
+        if (allowZero ? value < 0 : value <= 0) {
+          return { invalid: true };
+        }
+        return { value };
       }
 
-      const byId = (id) => document.getElementById(id);
-      const field = (inputId, hintId) => ({ input: byId(inputId), hint: byId(hintId) });
-      const radioValue = (name) => {
-        const checked = document.querySelector('input[name="' + name + '"]:checked');
-        return checked ? checked.value : "";
+      function showHint(hint, message, inputs = []) {
+        hint.textContent = message;
+        hint.hidden = !message;
+
+        inputs.forEach((input) => {
+          if (message) {
+            input.setAttribute("aria-invalid", "true");
+          } else {
+            input.removeAttribute("aria-invalid");
+          }
+        });
+      }
+
+      const field = (inputId, hintId) => ({
+        input: byId(inputId),
+        hint: byId(hintId),
+      });
+
+      const degrees = (radians) => (radians * 180) / Math.PI;
+      const radians = (value) => (value * Math.PI) / 180;
+
+      /* --- Направление конуса: влияет только на схемы --- */
+      let direction = "left";
+
+      /* --- Схема конуса --- */
+      const VIEW = {
+        width: 320,
+        axisY: 78,
+        left: 62,
+        right: 282,
+        maxHalf: 52,
+        bottomY: 142,
+        tick: 6,
       };
 
-      /* --- Угол конуса по двум диаметрам и длине --- */
-      const angleCard = {
+      function verticalDim(x, top, bottom) {
+        return [
+          "M" + round(x) + " " + round(top) + "L" + round(x) + " " + round(bottom),
+          "M" + round(x - VIEW.tick) + " " + round(top) + "L" + round(x + VIEW.tick) + " " + round(top),
+          "M" + round(x - VIEW.tick) + " " + round(bottom) + "L" + round(x + VIEW.tick) + " " + round(bottom),
+        ].join("");
+      }
+
+      function horizontalDim(y, from, to) {
+        return [
+          "M" + round(from) + " " + round(y) + "L" + round(to) + " " + round(y),
+          "M" + round(from) + " " + round(y - VIEW.tick) + "L" + round(from) + " " + round(y + VIEW.tick),
+          "M" + round(to) + " " + round(y - VIEW.tick) + "L" + round(to) + " " + round(y + VIEW.tick),
+        ].join("");
+      }
+
+      /* Строит схему по размерам: важен только масштаб, пропорции и угол сохраняются. */
+      function renderCone(svg, big, small, length) {
+        const scale = Math.min((2 * VIEW.maxHalf) / big, (VIEW.right - VIEW.left) / length);
+        const heightBig = (big * scale) / 2;
+        const heightSmall = (small * scale) / 2;
+        const lengthPx = length * scale;
+
+        const x0 = VIEW.left + (VIEW.right - VIEW.left - lengthPx) / 2;
+        const x1 = x0 + lengthPx;
+
+        const flip = direction === "left";
+        const screenX0 = flip ? VIEW.width - x0 : x0;
+        const screenX1 = flip ? VIEW.width - x1 : x1;
+        const topSmall = VIEW.axisY - heightSmall;
+        const bottomSmall = VIEW.axisY + heightSmall;
+        const topBig = VIEW.axisY - heightBig;
+        const bottomBig = VIEW.axisY + heightBig;
+
+        const shape = svg.querySelector('[data-el="shape"]');
+        shape.setAttribute(
+          "points",
+          [
+            [screenX0, topSmall],
+            [screenX1, topBig],
+            [screenX1, bottomBig],
+            [screenX0, bottomSmall],
+          ]
+            .map(([x, y]) => round(x) + "," + round(y))
+            .join(" ")
+        );
+
+        const axis = svg.querySelector('[data-el="axis"]');
+        axis.setAttribute("x1", round(screenX0 + (flip ? 6 : -6)));
+        axis.setAttribute("y1", VIEW.axisY);
+        axis.setAttribute("x2", round(screenX1 + (flip ? -6 : 6)));
+        axis.setAttribute("y2", VIEW.axisY);
+
+        svg
+          .querySelector('[data-el="dim-small"]')
+          .setAttribute("d", verticalDim(screenX0 + (flip ? 10 : -10), topSmall, bottomSmall));
+        svg
+          .querySelector('[data-el="dim-big"]')
+          .setAttribute("d", verticalDim(screenX1 + (flip ? -10 : 10), topBig, bottomBig));
+        svg
+          .querySelector('[data-el="dim-length"]')
+          .setAttribute("d", horizontalDim(VIEW.bottomY, screenX0, screenX1));
+
+        const labelSmall = svg.querySelector('[data-el="label-small"]');
+        labelSmall.setAttribute("x", round(screenX0 + (flip ? 18 : -18)));
+        labelSmall.setAttribute("y", VIEW.axisY + 4);
+        labelSmall.setAttribute("text-anchor", flip ? "start" : "end");
+
+        const labelBig = svg.querySelector('[data-el="label-big"]');
+        labelBig.setAttribute("x", round(screenX1 + (flip ? -18 : 18)));
+        labelBig.setAttribute("y", VIEW.axisY + 4);
+        labelBig.setAttribute("text-anchor", flip ? "end" : "start");
+
+        const labelLength = svg.querySelector('[data-el="label-length"]');
+        labelLength.setAttribute("x", round((screenX0 + screenX1) / 2));
+        labelLength.setAttribute("y", VIEW.bottomY - 8);
+        labelLength.setAttribute("text-anchor", "middle");
+
+        /* Дуга угла: центр — вершина конуса, поэтому дуга начинается на оси
+           и заканчивается на образующей. Радиус взят чуть больше расстояния
+           до малого торца — дуга уходит внутрь конуса, а не ложится на торец. */
+        const tan = (big - small) / (2 * length);
+        const halfAngle = Math.atan(tan);
+        const apexDistance = heightSmall / tan;
+        const radius = Math.hypot(apexDistance, heightSmall) + 18;
+        const apexX = screenX0 + (flip ? apexDistance : -apexDistance);
+        const side = flip ? -1 : 1;
+
+        const arcStart = { x: apexX + side * radius, y: VIEW.axisY };
+        const arcEnd = {
+          x: apexX + side * radius * Math.cos(halfAngle),
+          y: VIEW.axisY - radius * Math.sin(halfAngle),
+        };
+
+        svg
+          .querySelector('[data-el="angle"]')
+          .setAttribute(
+            "d",
+            "M" + round(arcStart.x) + " " + round(arcStart.y) +
+              "A" + round(radius) + " " + round(radius) + " 0 0 " + (flip ? 1 : 0) + " " +
+              round(arcEnd.x) + " " + round(arcEnd.y)
+          );
+
+        const labelAlpha = svg.querySelector('[data-el="label-alpha"]');
+        labelAlpha.setAttribute("x", round(screenX0 + (flip ? -26 : 26)));
+        labelAlpha.setAttribute("y", VIEW.axisY - 16);
+        labelAlpha.setAttribute("text-anchor", flip ? "end" : "start");
+      }
+
+      function figureOf(key) {
+        return document.querySelector('[data-cone="' + key + '"]').closest("[data-figure]");
+      }
+
+      function drawCone(key, big, small, length) {
+        const figure = figureOf(key);
+        if (!(big > 0 && small > 0 && length > 0 && big > small)) {
+          figure.hidden = true;
+          return;
+        }
+        renderCone(document.querySelector('[data-cone="' + key + '"]'), big, small, length);
+        figure.hidden = false;
+      }
+
+      function hideCone(key) {
+        figureOf(key).hidden = true;
+      }
+
+      /* --- Угол: разбор формата ввода --- */
+
+      /* Возвращает половину угла при вершине (угол на сторону от оси) или пусто. */
+      function readAngle(prefix) {
+        const mode = radioValue(prefix + "-angle-mode");
+
+        if (mode === "taper") {
+          const taper = field(prefix + "-taper", "hint-" + prefix + "-taper");
+          const parsed = readNumber(taper.input);
+          showHint(taper.hint, parsed.invalid ? NUMBER_MESSAGE : "", [taper.input]);
+          if (parsed.invalid || parsed.empty) {
+            return { empty: true };
+          }
+          /* Конусность 1 : X — это (D − d) / L = 2 · tan α. */
+          return { half: degrees(Math.atan(1 / (2 * parsed.value))) };
+        }
+
+        const kind = radioValue(prefix + "-angle-kind");
+        const reference = radioValue(prefix + "-angle-ref");
+        const limit = kind === "full" ? 180 : 90;
+
+        let given;
+        let hint;
+        let inputs;
+
+        if (mode === "dms") {
+          hint = byId("hint-" + prefix + "-angle-dms");
+          inputs = [
+            byId(prefix + "-angle-deg"),
+            byId(prefix + "-angle-min"),
+            byId(prefix + "-angle-sec"),
+          ];
+
+          const values = inputs.map((input) => readNumber(input, true));
+          const broken = values.some((parsed) => parsed.invalid);
+          const outOfRange = values
+            .slice(1)
+            .some((parsed) => !parsed.empty && parsed.value >= 60);
+
+          showHint(hint, broken ? NUMBER_MESSAGE : outOfRange ? DMS_MESSAGE : "", inputs);
+          if (broken || outOfRange) {
+            return { empty: true };
+          }
+
+          given =
+            (values[0].value || 0) +
+            (values[1].value || 0) / 60 +
+            (values[2].value || 0) / 3600;
+        } else {
+          const angle = field(prefix + "-angle", "hint-" + prefix + "-angle");
+          hint = angle.hint;
+          inputs = [angle.input];
+
+          const parsed = readNumber(angle.input);
+          showHint(hint, parsed.invalid ? NUMBER_MESSAGE : "", inputs);
+          if (parsed.invalid || parsed.empty) {
+            return { empty: true };
+          }
+          given = parsed.value;
+        }
+
+        if (given >= limit) {
+          showHint(hint, RANGE_MESSAGE + limit + "°", inputs);
+          return { empty: true };
+        }
+
+        const step = kind === "full" ? given / 2 : given;
+        const half = reference === "face" ? 90 - step : step;
+        return half > 0 ? { half } : { empty: true };
+      }
+
+      /* Показывает блок ввода под выбранный формат угла. */
+      function syncAngleMode(prefix) {
+        const card = document.querySelector('[data-card="' + prefix + '"]');
+        if (!card) {
+          return;
+        }
+        const mode = radioValue(prefix + "-angle-mode");
+        all("[data-angle-block]", card).forEach((block) => {
+          const kind = block.dataset.angleBlock;
+          block.hidden = kind === "variants" ? mode === "taper" : kind !== mode;
+        });
+      }
+
+      /* --- Карточка «угол по размерам» --- */
+      const cardA = {
         big: field("a-big", "hint-a-big"),
         small: field("a-small", "hint-a-small"),
         length: field("a-length", "hint-a-length"),
@@ -637,129 +1136,192 @@
         face: document.querySelector('[data-out="a-face"]'),
         taper: document.querySelector('[data-out="a-taper"]'),
         slope: document.querySelector('[data-out="a-slope"]'),
-        figure: document.querySelector("[data-figure]"),
+        dms: document.querySelector('[data-out="a-dms"]'),
       };
 
-      function updateAngleCard() {
-        const big = readNumber(angleCard.big.input);
-        const small = readNumber(angleCard.small.input);
-        const length = readNumber(angleCard.length.input);
+      function updateCardA() {
+        const big = readNumber(cardA.big.input);
+        const small = readNumber(cardA.small.input);
+        const length = readNumber(cardA.length.input);
 
-        setHint(angleCard.big, big.invalid ? NUMBER_MESSAGE : "");
-        setHint(angleCard.length, length.invalid ? NUMBER_MESSAGE : "");
+        showHint(cardA.big.hint, big.invalid ? NUMBER_MESSAGE : "", [cardA.big.input]);
+        showHint(cardA.length.hint, length.invalid ? NUMBER_MESSAGE : "", [cardA.length.input]);
 
         let smallMessage = small.invalid ? NUMBER_MESSAGE : "";
         if (!smallMessage && big.value && small.value && small.value >= big.value) {
           smallMessage = "Меньший диаметр должен быть меньше большего";
         }
-        setHint(angleCard.small, smallMessage);
+        showHint(cardA.small.hint, smallMessage, [cardA.small.input]);
 
         if (!big.value || !small.value || !length.value || smallMessage) {
-          angleCard.half.textContent = EMPTY_VALUE;
-          angleCard.full.textContent = EMPTY_VALUE;
-          angleCard.face.textContent = EMPTY_VALUE;
-          angleCard.taper.textContent = EMPTY_VALUE;
-          angleCard.slope.textContent = EMPTY_VALUE;
+          cardA.half.textContent = EMPTY_VALUE;
+          cardA.full.textContent = EMPTY_VALUE;
+          cardA.face.textContent = EMPTY_VALUE;
+          cardA.taper.textContent = EMPTY_VALUE;
+          cardA.slope.textContent = EMPTY_VALUE;
+          cardA.dms.textContent = EMPTY_VALUE;
+          hideCone("a");
           return;
         }
 
-        const tan = (big.value - small.value) / (2 * length.value);
-        const half = (Math.atan(tan) * 180) / Math.PI;
+        const half = degrees(Math.atan((big.value - small.value) / (2 * length.value)));
         const taper = (big.value - small.value) / length.value;
 
-        angleCard.half.textContent = formatNumber(half, 2);
-        angleCard.full.textContent = formatNumber(2 * half, 2) + "°";
-        angleCard.face.textContent = formatNumber(90 - half, 2) + "°";
-        angleCard.taper.textContent = "1 : " + formatNumber(1 / taper, 2);
-        angleCard.slope.textContent = formatNumber(tan * 100, 1) + " %";
+        cardA.half.textContent = formatNumber(half, 2);
+        cardA.full.textContent = formatNumber(2 * half, 2) + "°";
+        cardA.face.textContent = formatNumber(90 - half, 2) + "°";
+        cardA.taper.textContent = "1 : " + formatNumber(1 / taper, 2);
+        cardA.slope.textContent = formatNumber(taper * 50, 1) + " %";
+        cardA.dms.textContent = formatDms(half);
+
+        drawCone("a", big.value, small.value, length.value);
       }
 
-      angleCard.big.input.addEventListener("input", updateAngleCard);
-      angleCard.small.input.addEventListener("input", updateAngleCard);
-      angleCard.length.input.addEventListener("input", updateAngleCard);
-
-      const directionRadios = document.querySelectorAll('input[name="cone-dir"]');
-      directionRadios.forEach((radio) => {
-        radio.addEventListener("change", () => {
-          angleCard.figure.dataset.dir = radioValue("cone-dir") === "left" ? "left" : "right";
-        });
-      });
-
-      /* --- Второй диаметр по углу, длине и одному диаметру --- */
-      const sizeCard = {
-        angle: field("b-angle", "hint-b-angle"),
-        length: field("b-length", "hint-b-length"),
+      /* --- Карточка «диаметр по углу» --- */
+      const cardB = {
         diameter: field("b-diameter", "hint-b-diameter"),
-        label: document.querySelector("[data-label]"),
-        alert: document.querySelector("[data-alert]"),
+        length: field("b-length", "hint-b-length"),
+        label: document.querySelector('[data-label="b"]'),
+        alert: document.querySelector('[data-alert="b"]'),
         value: document.querySelector('[data-output="b-diameter"] [data-value]'),
         half: document.querySelector('[data-out="b-half"]'),
         full: document.querySelector('[data-out="b-full"]'),
+        dms: document.querySelector('[data-out="b-dms"]'),
       };
 
-      function updateSizeCard() {
-        const angle = readNumber(sizeCard.angle.input);
-        const length = readNumber(sizeCard.length.input);
-        const known = readNumber(sizeCard.diameter.input);
+      function updateCardB() {
+        const known = readNumber(cardB.diameter.input);
+        const length = readNumber(cardB.length.input);
 
-        const kind = radioValue("angle-kind");
-        const reference = radioValue("angle-ref");
-        const knownIsBig = radioValue("diameter-known") !== "small";
+        showHint(cardB.diameter.hint, known.invalid ? NUMBER_MESSAGE : "", [cardB.diameter.input]);
+        showHint(cardB.length.hint, length.invalid ? NUMBER_MESSAGE : "", [cardB.length.input]);
 
-        setHint(sizeCard.length, length.invalid ? NUMBER_MESSAGE : "");
-        setHint(sizeCard.diameter, known.invalid ? NUMBER_MESSAGE : "");
+        const angle = readAngle("b");
+        cardB.alert.hidden = true;
 
-        const limit = kind === "full" ? 180 : 90;
-        let angleMessage = angle.invalid ? NUMBER_MESSAGE : "";
-        if (!angleMessage && angle.value && angle.value >= limit) {
-          angleMessage = "Угол должен быть больше 0 и меньше " + limit + "°";
-        }
-        setHint(sizeCard.angle, angleMessage);
-
-        sizeCard.alert.hidden = true;
-
-        if (!angle.value || !length.value || !known.value || angleMessage) {
-          sizeCard.value.textContent = EMPTY_VALUE;
-          sizeCard.half.textContent = EMPTY_VALUE;
-          sizeCard.full.textContent = EMPTY_VALUE;
+        if (!angle.half || !known.value || !length.value) {
+          cardB.value.textContent = EMPTY_VALUE;
+          cardB.half.textContent = EMPTY_VALUE;
+          cardB.full.textContent = EMPTY_VALUE;
+          cardB.dms.textContent = EMPTY_VALUE;
+          hideCone("b");
           return;
         }
 
-        /* Половина угла при вершине (угол на сторону от оси) — общая мера для всех вариантов. */
-        const given = kind === "full" ? angle.value / 2 : angle.value;
-        const half = reference === "face" ? 90 - given : given;
-        const tan = Math.tan((half * Math.PI) / 180);
-
+        const knownIsBig = radioValue("b-known") !== "small";
+        const tan = Math.tan(radians(angle.half));
         const other = knownIsBig
           ? known.value - 2 * length.value * tan
           : known.value + 2 * length.value * tan;
 
-        sizeCard.label.textContent = knownIsBig ? "Меньший диаметр d" : "Больший диаметр D";
-        sizeCard.half.textContent = formatNumber(half, 2) + "°";
-        sizeCard.full.textContent = formatNumber(2 * half, 2) + "°";
+        cardB.label.textContent = knownIsBig ? "Меньший диаметр d" : "Больший диаметр D";
+        cardB.half.textContent = formatNumber(angle.half, 2) + "°";
+        cardB.full.textContent = formatNumber(2 * angle.half, 2) + "°";
+        cardB.dms.textContent = formatDms(angle.half);
 
         if (!(other > 0)) {
-          sizeCard.value.textContent = EMPTY_VALUE;
-          sizeCard.alert.textContent = "Конус с такими данными не получается: второй диаметр выходит за ноль. Уменьшите угол или длину.";
-          sizeCard.alert.hidden = false;
+          cardB.value.textContent = EMPTY_VALUE;
+          cardB.alert.textContent = ALERT_MESSAGE;
+          cardB.alert.hidden = false;
+          hideCone("b");
           return;
         }
 
-        sizeCard.value.textContent = formatNumber(other, 2);
+        cardB.value.textContent = formatNumber(other, 2);
+        drawCone(
+          "b",
+          knownIsBig ? known.value : other,
+          knownIsBig ? other : known.value,
+          length.value
+        );
       }
 
-      sizeCard.angle.input.addEventListener("input", updateSizeCard);
-      sizeCard.length.input.addEventListener("input", updateSizeCard);
-      sizeCard.diameter.input.addEventListener("input", updateSizeCard);
+      /* --- Карточка «длина по диаметрам и углу» --- */
+      const cardC = {
+        big: field("c-big", "hint-c-big"),
+        small: field("c-small", "hint-c-small"),
+        value: document.querySelector('[data-output="c-length"] [data-value]'),
+        half: document.querySelector('[data-out="c-half"]'),
+        full: document.querySelector('[data-out="c-full"]'),
+        dms: document.querySelector('[data-out="c-dms"]'),
+      };
 
-      document
-        .querySelectorAll('input[name="angle-kind"], input[name="angle-ref"], input[name="diameter-known"]')
-        .forEach((radio) => {
-          radio.addEventListener("change", updateSizeCard);
+      function updateCardC() {
+        const big = readNumber(cardC.big.input);
+        const small = readNumber(cardC.small.input);
+
+        showHint(cardC.big.hint, big.invalid ? NUMBER_MESSAGE : "", [cardC.big.input]);
+
+        let smallMessage = small.invalid ? NUMBER_MESSAGE : "";
+        if (!smallMessage && big.value && small.value && small.value >= big.value) {
+          smallMessage = "Меньший диаметр должен быть меньше большего";
+        }
+        showHint(cardC.small.hint, smallMessage, [cardC.small.input]);
+
+        const angle = readAngle("c");
+
+        if (!big.value || !small.value || !angle.half || smallMessage) {
+          cardC.value.textContent = EMPTY_VALUE;
+          cardC.half.textContent = EMPTY_VALUE;
+          cardC.full.textContent = EMPTY_VALUE;
+          cardC.dms.textContent = EMPTY_VALUE;
+          hideCone("c");
+          return;
+        }
+
+        const length = (big.value - small.value) / (2 * Math.tan(radians(angle.half)));
+
+        cardC.half.textContent = formatNumber(angle.half, 2) + "°";
+        cardC.full.textContent = formatNumber(2 * angle.half, 2) + "°";
+        cardC.dms.textContent = formatDms(angle.half);
+        cardC.value.textContent = formatNumber(length, 2);
+
+        drawCone("c", big.value, small.value, length);
+      }
+
+      /* --- Связывание --- */
+      ["a-big", "a-small", "a-length"].forEach((id) => {
+        byId(id).addEventListener("input", updateCardA);
+      });
+
+      ["b-angle", "b-angle-deg", "b-angle-min", "b-angle-sec", "b-taper", "b-diameter", "b-length"].forEach((id) => {
+        byId(id).addEventListener("input", updateCardB);
+      });
+
+      ["c-angle", "c-angle-deg", "c-angle-min", "c-angle-sec", "c-taper", "c-big", "c-small"].forEach((id) => {
+        byId(id).addEventListener("input", updateCardC);
+      });
+
+      all('input[type="radio"]').forEach((radio) => {
+        radio.addEventListener("change", (event) => {
+          const name = event.target.name;
+
+          if (name === "cone-dir") {
+            direction = event.target.value === "right" ? "right" : "left";
+            updateCardA();
+            updateCardB();
+            updateCardC();
+            return;
+          }
+
+          const prefix = name.charAt(0);
+          if (prefix !== "b" && prefix !== "c") {
+            return;
+          }
+          syncAngleMode(prefix);
+          if (prefix === "b") {
+            updateCardB();
+          } else {
+            updateCardC();
+          }
         });
+      });
 
-      updateAngleCard();
-      updateSizeCard();
+      syncAngleMode("b");
+      syncAngleMode("c");
+      updateCardA();
+      updateCardB();
+      updateCardC();
     })();
   </script>
 
