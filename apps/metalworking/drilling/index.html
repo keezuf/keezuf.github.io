@@ -7,10 +7,10 @@
   <title>Сверление — Металлообработка</title>
   <meta name="description" content="Разметка и контроль отверстий на окружности: шаг по хорде, размер от кромки детали, межцентровые расстояния с допусками.">
   <link rel="canonical" href="https://keezuf.github.io/apps/metalworking/drilling/">
-  <link rel="icon" href="../../../assets/img/favicon.svg?v=8d4d6e8a" type="image/svg+xml">
-  <link rel="stylesheet" href="../../../assets/css/base.css?v=8d4d6e8a">
-  <link rel="stylesheet" href="../../../assets/apps/drilling/app.css?v=8d4d6e8a">
-  <script src="../../../assets/js/embed.js?v=8d4d6e8a" defer></script>
+  <link rel="icon" href="../../../assets/img/favicon.svg?v=ee2dde14" type="image/svg+xml">
+  <link rel="stylesheet" href="../../../assets/css/base.css?v=ee2dde14">
+  <link rel="stylesheet" href="../../../assets/apps/drilling/app.css?v=ee2dde14">
+  <script src="../../../assets/js/embed.js?v=ee2dde14" defer></script>
 </head>
 <body class="app-page">
   <main class="app-shell">
@@ -232,85 +232,97 @@
         <p class="ctrl-warning" id="ctrl-warning" hidden></p>
 
         <div class="ctrl-grid">
-          <div class="ctrl-group" id="group-opposite">
-            <figure class="ctrl-figure">
-              <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Противоположные отверстия" data-fig="opposite"></svg>
-            </figure>
-            <ul class="ctrl-items">
-              <li class="ctrl-item">
-                <p class="ctrl-name"><span class="ctrl-num">1</span><span id="name-r1">Внешние кромки · внутренними губками</span></p>
-                <p class="ctrl-value"><span id="r1">—</span><span class="calc-unit"> мм</span></p>
-                <p class="ctrl-limit" id="r1-limit" hidden></p>
-                <p class="ctrl-drawing" id="r1-drawing" hidden></p>
-              </li>
-              <li class="ctrl-item">
-                <p class="ctrl-name"><span class="ctrl-num">2</span><span>Внутренние кромки · наружными губками</span></p>
-                <p class="ctrl-value"><span id="r2">—</span><span class="calc-unit"> мм</span></p>
-                <p class="ctrl-limit" id="r2-limit" hidden></p>
-                <p class="ctrl-drawing" id="r2-drawing" hidden></p>
-              </li>
-            </ul>
-          </div>
+          <section class="ctrl-group" id="group-opposite" aria-labelledby="group-opposite-title">
+            <h3 class="ctrl-head" id="group-opposite-title">Между противолежащими отверстиями</h3>
+            <div class="ctrl-body">
+              <figure class="ctrl-figure">
+                <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Противоположные отверстия" data-fig="opposite"></svg>
+              </figure>
+              <ul class="ctrl-items">
+                <li class="ctrl-item">
+                  <p class="ctrl-name"><span class="ctrl-num">1</span><span id="name-r1">Внешние кромки · внутренними губками</span></p>
+                  <p class="ctrl-value"><span id="r1">—</span><span class="calc-unit"> мм</span></p>
+                  <p class="ctrl-limit" id="r1-limit" hidden></p>
+                  <p class="ctrl-drawing" id="r1-drawing" hidden></p>
+                </li>
+                <li class="ctrl-item">
+                  <p class="ctrl-name"><span class="ctrl-num">2</span><span>Внутренние кромки · наружными губками</span></p>
+                  <p class="ctrl-value"><span id="r2">—</span><span class="calc-unit"> мм</span></p>
+                  <p class="ctrl-limit" id="r2-limit" hidden></p>
+                  <p class="ctrl-drawing" id="r2-drawing" hidden></p>
+                </li>
+              </ul>
+            </div>
+          </section>
 
-          <div class="ctrl-group" id="group-adjacent">
-            <figure class="ctrl-figure">
-              <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Соседние отверстия" data-fig="adjacent"></svg>
-            </figure>
-            <ul class="ctrl-items">
-              <li class="ctrl-item">
-                <p class="ctrl-name"><span class="ctrl-num">3</span><span>Внешние кромки · внутренними губками</span></p>
-                <p class="ctrl-value"><span id="r3">—</span><span class="calc-unit"> мм</span></p>
-                <p class="ctrl-limit" id="r3-limit" hidden></p>
-                <p class="ctrl-drawing" id="r3-drawing" hidden></p>
-              </li>
-              <li class="ctrl-item">
-                <p class="ctrl-name"><span class="ctrl-num">4</span><span>Внутренние кромки · наружными губками</span></p>
-                <p class="ctrl-value"><span id="r4">—</span><span class="calc-unit"> мм</span></p>
-                <p class="ctrl-limit" id="r4-limit" hidden></p>
-                <p class="ctrl-drawing" id="r4-drawing" hidden></p>
-              </li>
-            </ul>
-          </div>
+          <section class="ctrl-group" id="group-adjacent" aria-labelledby="group-adjacent-title">
+            <h3 class="ctrl-head" id="group-adjacent-title">Между соседними отверстиями</h3>
+            <div class="ctrl-body">
+              <figure class="ctrl-figure">
+                <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Соседние отверстия" data-fig="adjacent"></svg>
+              </figure>
+              <ul class="ctrl-items">
+                <li class="ctrl-item">
+                  <p class="ctrl-name"><span class="ctrl-num">3</span><span>Внешние кромки · внутренними губками</span></p>
+                  <p class="ctrl-value"><span id="r3">—</span><span class="calc-unit"> мм</span></p>
+                  <p class="ctrl-limit" id="r3-limit" hidden></p>
+                  <p class="ctrl-drawing" id="r3-drawing" hidden></p>
+                </li>
+                <li class="ctrl-item">
+                  <p class="ctrl-name"><span class="ctrl-num">4</span><span>Внутренние кромки · наружными губками</span></p>
+                  <p class="ctrl-value"><span id="r4">—</span><span class="calc-unit"> мм</span></p>
+                  <p class="ctrl-limit" id="r4-limit" hidden></p>
+                  <p class="ctrl-drawing" id="r4-drawing" hidden></p>
+                </li>
+              </ul>
+            </div>
+          </section>
 
-          <div class="ctrl-group" id="group-through">
-            <figure class="ctrl-figure">
-              <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Отверстия через одно" data-fig="through"></svg>
-            </figure>
-            <ul class="ctrl-items">
-              <li class="ctrl-item">
-                <p class="ctrl-name"><span class="ctrl-num">5</span><span>Внешние кромки · внутренними губками</span></p>
-                <p class="ctrl-value"><span id="r5">—</span><span class="calc-unit"> мм</span></p>
-                <p class="ctrl-limit" id="r5-limit" hidden></p>
-                <p class="ctrl-drawing" id="r5-drawing" hidden></p>
-              </li>
-              <li class="ctrl-item">
-                <p class="ctrl-name"><span class="ctrl-num">6</span><span>Внутренние кромки · наружными губками</span></p>
-                <p class="ctrl-value"><span id="r6">—</span><span class="calc-unit"> мм</span></p>
-                <p class="ctrl-limit" id="r6-limit" hidden></p>
-                <p class="ctrl-drawing" id="r6-drawing" hidden></p>
-              </li>
-            </ul>
-          </div>
+          <section class="ctrl-group" id="group-through" aria-labelledby="group-through-title">
+            <h3 class="ctrl-head" id="group-through-title">Через одно отверстие</h3>
+            <div class="ctrl-body">
+              <figure class="ctrl-figure">
+                <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Отверстия через одно" data-fig="through"></svg>
+              </figure>
+              <ul class="ctrl-items">
+                <li class="ctrl-item">
+                  <p class="ctrl-name"><span class="ctrl-num">5</span><span>Внешние кромки · внутренними губками</span></p>
+                  <p class="ctrl-value"><span id="r5">—</span><span class="calc-unit"> мм</span></p>
+                  <p class="ctrl-limit" id="r5-limit" hidden></p>
+                  <p class="ctrl-drawing" id="r5-drawing" hidden></p>
+                </li>
+                <li class="ctrl-item">
+                  <p class="ctrl-name"><span class="ctrl-num">6</span><span>Внутренние кромки · наружными губками</span></p>
+                  <p class="ctrl-value"><span id="r6">—</span><span class="calc-unit"> мм</span></p>
+                  <p class="ctrl-limit" id="r6-limit" hidden></p>
+                  <p class="ctrl-drawing" id="r6-drawing" hidden></p>
+                </li>
+              </ul>
+            </div>
+          </section>
 
-          <div class="ctrl-group" id="group-edge">
-            <figure class="ctrl-figure">
-              <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Отверстие от наружной и от внутренней кромки детали" data-fig="edge"></svg>
-            </figure>
-            <ul class="ctrl-items">
-              <li class="ctrl-item">
-                <p class="ctrl-name"><span class="ctrl-num">7</span><span>От наружной кромки · наружными губками</span></p>
-                <p class="ctrl-value"><span id="r7">—</span><span class="calc-unit"> мм</span></p>
-                <p class="ctrl-limit" id="r7-limit" hidden></p>
-                <p class="ctrl-drawing" id="r7-drawing" hidden></p>
-              </li>
-              <li class="ctrl-item">
-                <p class="ctrl-name"><span class="ctrl-num">8</span><span>От внутренней кромки · наружными губками</span></p>
-                <p class="ctrl-value"><span id="r8">—</span><span class="calc-unit"> мм</span></p>
-                <p class="ctrl-limit" id="r8-limit" hidden></p>
-                <p class="ctrl-drawing" id="r8-drawing" hidden></p>
-              </li>
-            </ul>
-          </div>
+          <section class="ctrl-group" id="group-edge" aria-labelledby="group-edge-title">
+            <h3 class="ctrl-head" id="group-edge-title">От краёв детали</h3>
+            <div class="ctrl-body">
+              <figure class="ctrl-figure">
+                <svg class="fig" viewBox="0 0 300 210" role="img" aria-label="Отверстие от наружной и от внутренней кромки детали" data-fig="edge"></svg>
+              </figure>
+              <ul class="ctrl-items">
+                <li class="ctrl-item">
+                  <p class="ctrl-name"><span class="ctrl-num">7</span><span>От наружной кромки · наружными губками</span></p>
+                  <p class="ctrl-value"><span id="r7">—</span><span class="calc-unit"> мм</span></p>
+                  <p class="ctrl-limit" id="r7-limit" hidden></p>
+                  <p class="ctrl-drawing" id="r7-drawing" hidden></p>
+                </li>
+                <li class="ctrl-item">
+                  <p class="ctrl-name"><span class="ctrl-num">8</span><span>От внутренней кромки · наружными губками</span></p>
+                  <p class="ctrl-value"><span id="r8">—</span><span class="calc-unit"> мм</span></p>
+                  <p class="ctrl-limit" id="r8-limit" hidden></p>
+                  <p class="ctrl-drawing" id="r8-drawing" hidden></p>
+                </li>
+              </ul>
+            </div>
+          </section>
         </div>
       </section>
     </div>
@@ -318,8 +330,8 @@
     <p class="calc-foot">Пункты 1–2 — контроль окружности, на которой лежат отверстия; 3–6 — контроль шага (хорды); 7–8 — концентричность центровой окружности и кромки детали. Поправка на диаметр отверстия учитывается по фактическому размеру, если он указан. Пределы: ± допуск на межцентровое для 1–6 и ± половина допуска для 7–8 — это радиальный размер. Размеры округляются до тысячных.</p>
   </main>
 
-  <script src="../../../assets/js/number-input.js?v=8d4d6e8a" defer></script>
-  <script src="../../../assets/apps/drilling/app.js?v=8d4d6e8a" defer></script>
+  <script src="../../../assets/js/number-input.js?v=ee2dde14" defer></script>
+  <script src="../../../assets/apps/drilling/app.js?v=ee2dde14" defer></script>
 
   <!-- Cloudflare Web Analytics -->
   <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "c6d6e0b0d92b46e0b3321fcfb130423d"}'></script>

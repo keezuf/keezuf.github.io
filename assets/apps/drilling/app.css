@@ -250,7 +250,7 @@
   font-size: 0.76rem;
 }
 
-/* Контроль: четыре группы «схема + два размера». */
+/* Контроль: четыре группы «название, схема и два размера». */
 .ctrl-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 26rem), 1fr));
@@ -258,15 +258,31 @@
 }
 
 .ctrl-group {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 0.85rem;
+  display: grid;
+  gap: 0.7rem;
   min-width: 0;
   padding: 0.75rem;
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius);
   background: rgba(9, 12, 18, 0.35);
+}
+
+.ctrl-head {
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+}
+
+.ctrl-body {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.85rem;
+  min-width: 0;
 }
 
 .ctrl-figure {
