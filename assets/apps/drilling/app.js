@@ -20,24 +20,11 @@
 
   /* --- Ввод --- */
 
+  const baseReadNumber = window.Keezuf.readNumber;
+
   function readNumber(input, allowZero = false) {
-    const cleaned = input.value
-      .replace(/[\s\u00a0\u202f]/g, "")
-      .replace(/,/g, ".")
-      .replace(/\.$/, "");
-
-    if (cleaned === "") {
-      return { empty: true };
-    }
-    if (!/^\d*\.?\d+$/.test(cleaned)) {
-      return { error: NUMBER };
-    }
-
-    const value = Number(cleaned);
-    if (!Number.isFinite(value) || (allowZero ? value < 0 : value <= 0)) {
-      return { error: NUMBER };
-    }
-    return { value };
+    const parsed = baseReadNumber(input, allowZero);
+    return parsed.invalid ? { error: NUMBER } : parsed;
   }
 
   function readCount(input) {

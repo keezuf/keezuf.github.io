@@ -39,28 +39,7 @@
 
   /* Числа вводят с запятой и пробелами между разрядами — принимаем оба варианта.
      Незаконченный ввод («12,») не считается ошибкой, пока не появилась цифра после разделителя. */
-  function readNumber(input, allowZero = false) {
-    const cleaned = input.value
-      .replace(/[\s\u00a0\u202f]/g, "")
-      .replace(/,/g, ".")
-      .replace(/\.$/, "");
-
-    if (cleaned === "") {
-      return { empty: true };
-    }
-    if (!/^\d*\.?\d+$/.test(cleaned)) {
-      return { invalid: true };
-    }
-
-    const value = Number(cleaned);
-    if (!Number.isFinite(value)) {
-      return { invalid: true };
-    }
-    if (allowZero ? value < 0 : value <= 0) {
-      return { invalid: true };
-    }
-    return { value };
-  }
+  const readNumber = window.Keezuf.readNumber;
 
   function showHint(hint, message, inputs = []) {
     hint.textContent = message;

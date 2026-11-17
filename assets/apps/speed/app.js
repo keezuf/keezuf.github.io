@@ -18,22 +18,7 @@
 
   /* Числа вводят с запятой и пробелами между разрядами — принимаем оба варианта.
      Незаконченный ввод («12,») не считается ошибкой, пока не появилась цифра после разделителя. */
-  function readNumber(input) {
-    const cleaned = input.value
-      .replace(/[\s\u00a0\u202f]/g, "")
-      .replace(/,/g, ".")
-      .replace(/\.$/, "");
-
-    if (cleaned === "") {
-      return { empty: true };
-    }
-    if (!/^\d*\.?\d+$/.test(cleaned)) {
-      return { invalid: true };
-    }
-
-    const value = Number(cleaned);
-    return Number.isFinite(value) && value > 0 ? { value } : { invalid: true };
-  }
+  const readNumber = window.Keezuf.readNumber;
 
   /* Карточка: два поля ввода, формула расчёта и место для результата. */
   function bindCard(card) {
