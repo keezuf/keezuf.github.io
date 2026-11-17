@@ -1,0 +1,372 @@
+/* Расчёт конуса: три карточки — угол, диаметр по углу, длина по углу.
+   Стили живут в самой странице приложения и используют токены base.css. */
+[hidden] {
+  display: none !important;
+}
+
+.cone-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 1.25rem;
+  margin-top: 1rem;
+}
+
+.cone-toolbar-note {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.calc-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 19rem), 1fr));
+  align-items: start;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.calc-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+  padding: clamp(0.95rem, 2.4vw, 1.3rem);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(24, 32, 46, 0.72), rgba(16, 20, 29, 0.58));
+}
+
+.calc-title {
+  font-size: 1.02rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+
+.calc-note {
+  color: var(--text-muted);
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.calc-fields {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.field {
+  display: grid;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.field-label {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.field-box {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding-inline: 0.7rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 11, 17, 0.6);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field-box:hover {
+  border-color: #4a5c80;
+}
+
+/* Фокус показываем на всём поле, а не на тонкой строке ввода. */
+.field-box:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(143, 176, 255, 0.18);
+}
+
+.field-input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.52rem 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.field-input:focus,
+.dms-input:focus {
+  outline: none;
+}
+
+.field-input::placeholder,
+.dms-input::placeholder {
+  color: var(--text-dim);
+}
+
+.field-unit {
+  flex: 0 0 auto;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.field-hint {
+  color: #ffb0b0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+/* Угол в градусах-минутах-секундах: три узких поля в ряд. */
+.dms-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.35rem;
+}
+
+.dms-cell {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  padding-inline: 0.5rem;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: rgba(8, 11, 17, 0.6);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dms-cell:hover {
+  border-color: #4a5c80;
+}
+
+.dms-cell:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(143, 176, 255, 0.18);
+}
+
+.dms-input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.5rem 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.dms-cell .field-unit {
+  font-size: 0.7rem;
+}
+
+/* Переключатели «на сторону / общий», «от оси / от торца» — ряд чипов. */
+.seg {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.seg-legend {
+  padding: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.seg-track {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.3rem;
+}
+
+.seg-option {
+  position: relative;
+  display: inline-flex;
+}
+
+.seg-option input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.seg-option span {
+  padding: 0.32rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(18, 23, 34, 0.6);
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.seg-option span:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.seg-option input:checked + span {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(143, 176, 255, 0.14);
+}
+
+.seg-option input:focus-visible + span {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.calc-result {
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line);
+}
+
+.calc-result-label {
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.calc-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin-top: 0.35rem;
+}
+
+.calc-number {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: clamp(1.55rem, 5.5vw, 2rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.calc-unit {
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+/* Второстепенные значения: общий угол, угол от торца, конусность. */
+.calc-extra {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.6rem;
+}
+
+.calc-extra > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.4rem 0.75rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.calc-extra dt {
+  color: var(--text-muted);
+  font-size: 0.82rem;
+}
+
+.calc-extra dd {
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.calc-alert {
+  margin-top: 0.5rem;
+  color: #ffb0b0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.calc-formula {
+  margin-top: 0.45rem;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+/* Схема конуса: перестраивается по текущим значениям карточки. */
+.cone-figure {
+  margin: 0;
+}
+
+.cone-fig {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 26rem;
+}
+
+.cone-shape {
+  fill: rgba(143, 176, 255, 0.1);
+  stroke: var(--accent);
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+}
+
+.cone-axis {
+  stroke: var(--line-strong);
+  stroke-width: 1;
+  stroke-dasharray: 5 4;
+}
+
+.cone-dim {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 1;
+}
+
+.cone-angle {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1;
+}
+
+.cone-label text {
+  fill: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.cone-caption {
+  margin-top: 0.4rem;
+  color: var(--text-dim);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.calc-foot {
+  max-width: 72ch;
+  margin-top: 1.1rem;
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
