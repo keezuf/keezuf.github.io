@@ -294,6 +294,49 @@
   }
 
   /* --- Карточка «угол по размерам» --- */
+
+  function gcd(first, second) {
+    let left = Math.abs(first);
+    let right = Math.abs(second);
+    while (right) {
+      const rest = left % right;
+      left = right;
+      right = rest;
+    }
+    return left;
+  }
+
+  /* Конусность на экране — тоже отношение X : Y, как и ввод: (D − d) : L
+     сокращаем, пока числа остаются небольшими. Так 7 : 24 и 2 : 5 читаются
+     как привычные обозначения, а «81 : 200» из округлённых размеров — нет. */
+  const RATIO_LIMIT = 100;
+
+  function taperRatio(difference, length) {
+    /* Множитель убирает запятые: 20,25 : 50 → 2025 : 5000 → 81 : 200. */
+    for (const factor of [1, 10, 100, 1000]) {
+      const top = Math.round(difference * factor);
+      const bottom = Math.round(length * factor);
+
+      const exact =
+        Math.abs(difference * factor - top) < 1e-6 &&
+        Math.abs(length * factor - bottom) < 1e-6;
+
+      if (!exact || top < 1) {
+        continue;
+      }
+
+      const divisor = gcd(top, bottom);
+      const simpleTop = top / divisor;
+      const simpleBottom = bottom / divisor;
+
+      if (simpleTop > RATIO_LIMIT || simpleBottom > RATIO_LIMIT) {
+        return null;
+      }
+      return simpleTop + " : " + simpleBottom;
+    }
+    return null;
+  }
+
   const cardA = {
     big: field("a-big", "hint-a-big"),
     small: field("a-small", "hint-a-small"),
@@ -333,11 +376,12 @@
 
     const half = degrees(Math.atan((big.value - small.value) / (2 * length.value)));
     const taper = (big.value - small.value) / length.value;
+    const ratio = taperRatio(big.value - small.value, length.value);
 
     cardA.half.textContent = formatNumber(half, 2);
     cardA.full.textContent = formatNumber(2 * half, 2) + "°";
     cardA.face.textContent = formatNumber(90 - half, 2) + "°";
-    cardA.taper.textContent = "1 : " + formatNumber(1 / taper, 2);
+    cardA.taper.textContent = ratio || "1 : " + formatNumber(1 / taper, 2);
     cardA.slope.textContent = formatNumber(taper * 50, 1) + " %";
     cardA.dms.textContent = formatDms(half);
 
