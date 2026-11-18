@@ -7,10 +7,10 @@
   <title>Расчёт конуса — Металлобработка</title>
   <meta name="description" content="Угол конуса по двум диаметрам и длине, второй диаметр и длина конуса по углу. Угол в градусах, минутах и секундах или конусностью; схемы перестраиваются по введённым размерам.">
   <link rel="canonical" href="https://keezuf.github.io/apps/metalworking/cone/">
-  <link rel="icon" href="../../../assets/img/favicon.svg?v=ee2dde14" type="image/svg+xml">
-  <link rel="stylesheet" href="../../../assets/css/base.css?v=ee2dde14">
-  <link rel="stylesheet" href="../../../assets/apps/cone/app.css?v=ee2dde14">
-  <script src="../../../assets/js/embed.js?v=ee2dde14" defer></script>
+  <link rel="icon" href="../../../assets/img/favicon.svg?v=93ae0483" type="image/svg+xml">
+  <link rel="stylesheet" href="../../../assets/css/base.css?v=93ae0483">
+  <link rel="stylesheet" href="../../../assets/apps/cone/app.css?v=93ae0483">
+  <script src="../../../assets/js/embed.js?v=93ae0483" defer></script>
 </head>
 <body class="app-page">
   <main class="app-shell">
@@ -173,9 +173,12 @@
           </div>
 
           <div class="field" data-angle-block="taper" hidden>
-            <label class="field-label" for="b-taper">Конусность</label>
-            <div class="field-box">
-              <span class="field-unit" aria-hidden="true">1 :</span>
+            <span class="field-label" id="b-taper-label">Конусность</span>
+            <div class="field-box" role="group" aria-labelledby="b-taper-label">
+              <label class="visually-hidden" for="b-taper-num">Числитель конусности</label>
+              <input class="field-input taper-num" id="b-taper-num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="1" value="1" aria-describedby="hint-b-taper">
+              <span class="field-unit" aria-hidden="true">:</span>
+              <label class="visually-hidden" for="b-taper">Знаменатель конусности</label>
               <input class="field-input" id="b-taper" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="2,5" aria-describedby="hint-b-taper">
             </div>
             <p class="field-hint" id="hint-b-taper" hidden></p>
@@ -358,9 +361,12 @@
           </div>
 
           <div class="field" data-angle-block="taper" hidden>
-            <label class="field-label" for="c-taper">Конусность</label>
-            <div class="field-box">
-              <span class="field-unit" aria-hidden="true">1 :</span>
+            <span class="field-label" id="c-taper-label">Конусность</span>
+            <div class="field-box" role="group" aria-labelledby="c-taper-label">
+              <label class="visually-hidden" for="c-taper-num">Числитель конусности</label>
+              <input class="field-input taper-num" id="c-taper-num" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="1" value="1" aria-describedby="hint-c-taper">
+              <span class="field-unit" aria-hidden="true">:</span>
+              <label class="visually-hidden" for="c-taper">Знаменатель конусности</label>
               <input class="field-input" id="c-taper" type="text" inputmode="decimal" autocomplete="off" spellcheck="false" placeholder="2,5" aria-describedby="hint-c-taper">
             </div>
             <p class="field-hint" id="hint-c-taper" hidden></p>
@@ -438,11 +444,11 @@
       </section>
     </div>
 
-    <p class="calc-foot">α — угол на сторону: между осью конуса и образующей; 2α — общий угол; 90° − α — угол между образующей и торцом. Конусность — отношение разности диаметров к длине, задаётся как 1 : X, при этом tan α = 1 / (2 · X). Уклон — половина конусности. Значения на экране округлены.</p>
+    <p class="calc-foot">α — угол на сторону: между осью конуса и образующей; 2α — общий угол; 90° − α — угол между образующей и торцом. Конусность — отношение разности диаметров к длине, задаётся как X : Y (обычно 1 : X), при этом tan α = X / (2 · Y). Уклон — половина конусности. Значения на экране округлены.</p>
   </main>
 
-  <script src="../../../assets/js/number-input.js?v=ee2dde14" defer></script>
-  <script src="../../../assets/apps/cone/app.js?v=ee2dde14" defer></script>
+  <script src="../../../assets/js/number-input.js?v=93ae0483" defer></script>
+  <script src="../../../assets/apps/cone/app.js?v=93ae0483" defer></script>
 
   <!-- Cloudflare Web Analytics -->
   <script type="module" src="https://static.cloudflareinsights.com/beacon.min.js" data-cf-beacon='{"token": "c6d6e0b0d92b46e0b3321fcfb130423d"}'></script>

@@ -210,14 +210,20 @@
     const mode = radioValue(prefix + "-angle-mode");
 
     if (mode === "taper") {
-      const taper = field(prefix + "-taper", "hint-" + prefix + "-taper");
-      const parsed = readNumber(taper.input);
-      showHint(taper.hint, parsed.invalid ? NUMBER_MESSAGE : "", [taper.input]);
-      if (parsed.invalid || parsed.empty) {
+      const numerator = byId(prefix + "-taper-num");
+      const denominator = byId(prefix + "-taper");
+      const hint = byId("hint-" + prefix + "-taper");
+
+      const top = readNumber(numerator);
+      const bottom = readNumber(denominator);
+      const broken = top.invalid || bottom.invalid;
+
+      showHint(hint, broken ? NUMBER_MESSAGE : "", [numerator, denominator]);
+      if (broken || top.empty || bottom.empty) {
         return { empty: true };
       }
-      /* Конусность 1 : X — это (D − d) / L = 2 · tan α. */
-      return { half: degrees(Math.atan(1 / (2 * parsed.value))) };
+      /* Конусность X : Y — это (D − d) / L = X / Y = 2 · tan α. */
+      return { half: degrees(Math.atan(top.value / (2 * bottom.value))) };
     }
 
     const kind = radioValue(prefix + "-angle-kind");
@@ -445,11 +451,11 @@
     byId(id).addEventListener("input", updateCardA);
   });
 
-  ["b-angle", "b-angle-deg", "b-angle-min", "b-angle-sec", "b-taper", "b-diameter", "b-length"].forEach((id) => {
+  ["b-angle", "b-angle-deg", "b-angle-min", "b-angle-sec", "b-taper-num", "b-taper", "b-diameter", "b-length"].forEach((id) => {
     byId(id).addEventListener("input", updateCardB);
   });
 
-  ["c-angle", "c-angle-deg", "c-angle-min", "c-angle-sec", "c-taper", "c-big", "c-small"].forEach((id) => {
+  ["c-angle", "c-angle-deg", "c-angle-min", "c-angle-sec", "c-taper-num", "c-taper", "c-big", "c-small"].forEach((id) => {
     byId(id).addEventListener("input", updateCardC);
   });
 

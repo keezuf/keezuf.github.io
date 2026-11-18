@@ -100,6 +100,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Конусность X : Y: числитель узкий и прижат к двоеточию, знаменатель тянется. */
+.taper-num {
+  flex: 0 0 auto;
+  width: 3.25ch;
+  text-align: right;
+}
+
 .field-input:focus,
 .dms-input:focus {
   outline: none;
