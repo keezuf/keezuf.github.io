@@ -69,37 +69,44 @@
   const VIEW = {
     width: 320,
     axisY: 78,
-    left: 62,
-    right: 282,
-    maxHalf: 52,
-    bottomY: 142,
-    tick: 6,
   };
 
   function verticalDim(x, top, bottom) {
-    return [
-      "M" + round(x) + " " + round(top) + "L" + round(x) + " " + round(bottom),
-      "M" + round(x - VIEW.tick) + " " + round(top) + "L" + round(x + VIEW.tick) + " " + round(top),
-      "M" + round(x - VIEW.tick) + " " + round(bottom) + "L" + round(x + VIEW.tick) + " " + round(bottom),
-    ].join("");
+    return "M" + round(x) + " " + round(top) + "L" + round(x) + " " + round(bottom);
   }
 
   function horizontalDim(y, from, to) {
-    return [
-      "M" + round(from) + " " + round(y) + "L" + round(to) + " " + round(y),
-      "M" + round(from) + " " + round(y - VIEW.tick) + "L" + round(from) + " " + round(y + VIEW.tick),
-      "M" + round(to) + " " + round(y - VIEW.tick) + "L" + round(to) + " " + round(y + VIEW.tick),
-    ].join("");
+    return "M" + round(from) + " " + round(y) + "L" + round(to) + " " + round(y);
+  }
+
+  /* Выноска от кромки детали к размерной линии. */
+  function extension(fromX, fromY, toX, toY) {
+    return "M" + round(fromX) + " " + round(fromY) + "L" + round(toX) + " " + round(toY);
+  }
+
+  /* Стрелка-«галочка»: остриё в точке, крылья — назад по линии. */
+  function arrow(tipX, tipY, ux, uy, size = 7) {
+    const backX = tipX - ux * size;
+    const backY = tipY - uy * size;
+    const wingX = -uy * size * 0.4;
+    const wingY = ux * size * 0.4;
+    return (
+      "M" + round(backX + wingX) + " " + round(backY + wingY) +
+      "L" + round(tipX) + " " + round(tipY) +
+      "L" + round(backX - wingX) + " " + round(backY - wingY)
+    );
   }
 
   /* Строит схему по размерам: важен только масштаб, пропорции и угол сохраняются. */
-  function renderCone(svg, big, small, length) {
-    const scale = Math.min((2 * VIEW.maxHalf) / big, (VIEW.right - VIEW.left) / length);
+  function renderCone(svg, big, small, length, accent) {
+    /* Геометрия рисуется крупно, а кадр в конце подгоняется под содержимое:
+       поэтому схема занимает всю ширину карточки, а подписи остаются мелкими. */
+    const scale = 260 / Math.max(big, length);
     const heightBig = (big * scale) / 2;
     const heightSmall = (small * scale) / 2;
     const lengthPx = length * scale;
 
-    const x0 = VIEW.left + (VIEW.right - VIEW.left - lengthPx) / 2;
+    const x0 = VIEW.width / 2 - lengthPx / 2;
     const x1 = x0 + lengthPx;
 
     const flip = direction === "left";
@@ -109,6 +116,8 @@
     const bottomSmall = VIEW.axisY + heightSmall;
     const topBig = VIEW.axisY - heightBig;
     const bottomBig = VIEW.axisY + heightBig;
+    /* Размер длины — ниже самой широкой части конуса. */
+    const bottomY = bottomBig + 16;
 
     const shape = svg.querySelector('[data-el="shape"]');
     shape.setAttribute(
@@ -129,38 +138,73 @@
     axis.setAttribute("x2", round(screenX1 + (flip ? -6 : 6)));
     axis.setAttribute("y2", VIEW.axisY);
 
+    const dimSmallX = screenX0 + (flip ? 15 : -15);
+    const dimBigX = screenX1 + (flip ? -15 : 15);
+    const outSmall = flip ? 6 : -6;
+    const outBig = flip ? -6 : 6;
+    const alongSign = screenX0 > screenX1 ? 1 : -1;
+    /* Остриё не доходит до выносной линии: так стрелка не выходит за размерную. */
+    const inset = 1;
+
     svg
       .querySelector('[data-el="dim-small"]')
-      .setAttribute("d", verticalDim(screenX0 + (flip ? 10 : -10), topSmall, bottomSmall));
+      .setAttribute("d", verticalDim(dimSmallX, topSmall + inset, bottomSmall - inset));
     svg
       .querySelector('[data-el="dim-big"]')
-      .setAttribute("d", verticalDim(screenX1 + (flip ? -10 : 10), topBig, bottomBig));
+      .setAttribute("d", verticalDim(dimBigX, topBig + inset, bottomBig - inset));
     svg
       .querySelector('[data-el="dim-length"]')
-      .setAttribute("d", horizontalDim(VIEW.bottomY, screenX0, screenX1));
+      .setAttribute(
+        "d",
+        horizontalDim(bottomY, screenX0 - alongSign * inset, screenX1 + alongSign * inset)
+      );
+
+    svg
+      .querySelector('[data-el="ext-small"]')
+      .setAttribute(
+        "d",
+        extension(screenX0, topSmall, dimSmallX + outSmall, topSmall) +
+          extension(screenX0, bottomSmall, dimSmallX + outSmall, bottomSmall)
+      );
+    svg
+      .querySelector('[data-el="ext-big"]')
+      .setAttribute(
+        "d",
+        extension(screenX1, topBig, dimBigX + outBig, topBig) +
+          extension(screenX1, bottomBig, dimBigX + outBig, bottomBig)
+      );
+    svg
+      .querySelector('[data-el="ext-length"]')
+      .setAttribute(
+        "d",
+        extension(screenX0, bottomSmall, screenX0, bottomY + 6) +
+          extension(screenX1, bottomBig, screenX1, bottomY + 6)
+      );
 
     const labelSmall = svg.querySelector('[data-el="label-small"]');
-    labelSmall.setAttribute("x", round(screenX0 + (flip ? 18 : -18)));
+    labelSmall.setAttribute("x", round(screenX0 + (flip ? 23 : -23)));
     labelSmall.setAttribute("y", VIEW.axisY + 4);
     labelSmall.setAttribute("text-anchor", flip ? "start" : "end");
 
     const labelBig = svg.querySelector('[data-el="label-big"]');
-    labelBig.setAttribute("x", round(screenX1 + (flip ? -18 : 18)));
+    labelBig.setAttribute("x", round(screenX1 + (flip ? -23 : 23)));
     labelBig.setAttribute("y", VIEW.axisY + 4);
     labelBig.setAttribute("text-anchor", flip ? "end" : "start");
 
     const labelLength = svg.querySelector('[data-el="label-length"]');
     labelLength.setAttribute("x", round((screenX0 + screenX1) / 2));
-    labelLength.setAttribute("y", VIEW.bottomY - 8);
+    labelLength.setAttribute("y", bottomY - 8);
     labelLength.setAttribute("text-anchor", "middle");
 
     /* Дуга угла: центр — вершина конуса, поэтому дуга начинается на оси
-       и заканчивается на образующей. Радиус взят чуть больше расстояния
-       до малого торца — дуга уходит внутрь конуса, а не ложится на торец. */
+       и заканчивается на образующей. Радиус доводим до середины длины
+       конуса — дуга стоит в центре схемы. */
     const tan = (big - small) / (2 * length);
     const halfAngle = Math.atan(tan);
     const apexDistance = heightSmall / tan;
-    const radius = Math.hypot(apexDistance, heightSmall) + 18;
+    const radius = apexDistance + lengthPx / 2;
+    /* Дуга через те же точки, но на 20% криволинейнее — заметнее, что это дуга. */
+    const arcRadius = radius / 1.2;
     const apexX = screenX0 + (flip ? apexDistance : -apexDistance);
     const side = flip ? -1 : 1;
 
@@ -175,28 +219,90 @@
       .setAttribute(
         "d",
         "M" + round(arcStart.x) + " " + round(arcStart.y) +
-          "A" + round(radius) + " " + round(radius) + " 0 0 " + (flip ? 1 : 0) + " " +
+          "A" + round(arcRadius) + " " + round(arcRadius) + " 0 0 " + (flip ? 1 : 0) + " " +
           round(arcEnd.x) + " " + round(arcEnd.y)
       );
 
     const labelAlpha = svg.querySelector('[data-el="label-alpha"]');
-    labelAlpha.setAttribute("x", round(screenX0 + (flip ? -26 : 26)));
-    labelAlpha.setAttribute("y", VIEW.axisY - 16);
-    labelAlpha.setAttribute("text-anchor", flip ? "end" : "start");
+    const arcMid = {
+      x: apexX + side * radius * Math.cos(halfAngle / 2),
+      y: VIEW.axisY - radius * Math.sin(halfAngle / 2),
+    };
+    labelAlpha.setAttribute("x", round(arcMid.x + side * 14));
+    labelAlpha.setAttribute("y", round(arcMid.y + 4));
+    labelAlpha.setAttribute("text-anchor", "middle");
+
+    /* Стрелки: размерные и две на дуге угла — как в схеме шага. */
+    const arcArrow = 7.5;
+    const smallArrows = [
+      arrow(dimSmallX, topSmall + inset, 0, -1),
+      arrow(dimSmallX, bottomSmall - inset, 0, 1),
+    ].join("");
+    const bigArrows = [
+      arrow(dimBigX, topBig + inset, 0, -1),
+      arrow(dimBigX, bottomBig - inset, 0, 1),
+    ].join("");
+    const lengthArrows = [
+      arrow(screenX0 - alongSign * inset, bottomY, alongSign, 0),
+      arrow(screenX1 + alongSign * inset, bottomY, -alongSign, 0),
+    ].join("");
+    const arcArrows = [
+      arrow(arcStart.x, arcStart.y, 0, 1, arcArrow),
+      arrow(arcEnd.x, arcEnd.y, -side * Math.sin(halfAngle), -Math.cos(halfAngle), arcArrow),
+    ].join("");
+
+    svg.querySelector('[data-el="arrows-small"]').setAttribute("d", smallArrows);
+    svg.querySelector('[data-el="arrows-big"]').setAttribute("d", bigArrows);
+    svg.querySelector('[data-el="arrows-length"]').setAttribute("d", lengthArrows);
+    svg.querySelector('[data-el="arrows-arc"]').setAttribute("d", arcArrows);
+
+    /* Акцент — на размерной линии и стрелках посчитанного размера. */
+    const accentTargets =
+      {
+        angle: ["angle", "arrows-arc"],
+        small: ["dim-small", "arrows-small"],
+        big: ["dim-big", "arrows-big"],
+        length: ["dim-length", "arrows-length"],
+      }[accent] || [];
+    [
+      "angle",
+      "dim-small",
+      "dim-big",
+      "dim-length",
+      "arrows-small",
+      "arrows-big",
+      "arrows-length",
+      "arrows-arc",
+    ].forEach((el) => {
+      svg.querySelector('[data-el="' + el + '"]').classList.toggle("is-accent", accentTargets.includes(el));
+    });
+
+    /* Кадр — по содержимому: рисунок занимает почти всю ширину карточки. */
+    const box = svg.getBBox();
+    let viewX = box.x - 8;
+    let viewY = box.y - 8;
+    let viewW = box.width + 16;
+    const viewH = box.height + 16;
+    if (viewW < 300) {
+      viewX -= (300 - viewW) / 2;
+      viewW = 300;
+    }
+    svg.setAttribute("viewBox", [round(viewX), round(viewY), round(viewW), round(viewH)].join(" "));
   }
 
   function figureOf(key) {
     return document.querySelector('[data-cone="' + key + '"]').closest("[data-figure]");
   }
 
-  function drawCone(key, big, small, length) {
+  function drawCone(key, big, small, length, accent) {
     const figure = figureOf(key);
     if (!(big > 0 && small > 0 && length > 0 && big > small)) {
       figure.hidden = true;
       return;
     }
-    renderCone(document.querySelector('[data-cone="' + key + '"]'), big, small, length);
+    /* Рисуем на видимой схеме: иначе getBBox() вернёт нули. */
     figure.hidden = false;
+    renderCone(document.querySelector('[data-cone="' + key + '"]'), big, small, length, accent);
   }
 
   function hideCone(key) {
@@ -378,14 +484,14 @@
     const taper = (big.value - small.value) / length.value;
     const ratio = taperRatio(big.value - small.value, length.value);
 
-    cardA.half.textContent = formatNumber(half, 2);
+    cardA.half.textContent = formatNumber(half, 2) + "°";
     cardA.full.textContent = formatNumber(2 * half, 2) + "°";
     cardA.face.textContent = formatNumber(90 - half, 2) + "°";
     cardA.taper.textContent = ratio || "1 : " + formatNumber(1 / taper, 2);
     cardA.slope.textContent = formatNumber(taper * 50, 1) + " %";
     cardA.dms.textContent = formatDms(half);
 
-    drawCone("a", big.value, small.value, length.value);
+    drawCone("a", big.value, small.value, length.value, "angle");
   }
 
   /* --- Карточка «диаметр по углу» --- */
@@ -420,6 +526,13 @@
     }
 
     const knownIsBig = radioValue("b-known") !== "small";
+
+    /* Акцент — на том диаметре, который посчитан. */
+    const labelBig = document.querySelector('[data-cone="b"] [data-el="label-big"]');
+    const labelSmall = document.querySelector('[data-cone="b"] [data-el="label-small"]');
+    labelBig.classList.toggle("is-accent", !knownIsBig);
+    labelSmall.classList.toggle("is-accent", knownIsBig);
+
     const tan = Math.tan(radians(angle.half));
     const other = knownIsBig
       ? known.value - 2 * length.value * tan
@@ -443,7 +556,8 @@
       "b",
       knownIsBig ? known.value : other,
       knownIsBig ? other : known.value,
-      length.value
+      length.value,
+      knownIsBig ? "small" : "big"
     );
   }
 
@@ -487,7 +601,7 @@
     cardC.dms.textContent = formatDms(angle.half);
     cardC.value.textContent = formatNumber(length, 2);
 
-    drawCone("c", big.value, small.value, length);
+    drawCone("c", big.value, small.value, length, "length");
   }
 
   /* --- Связывание --- */

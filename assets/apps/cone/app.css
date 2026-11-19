@@ -259,6 +259,10 @@
   margin-top: 0.35rem;
 }
 
+.calc-number.is-accent {
+  color: var(--accent);
+}
+
 .calc-number {
   color: var(--text);
   font-family: var(--font-mono);
@@ -329,13 +333,12 @@
   display: block;
   width: 100%;
   height: auto;
-  max-width: 26rem;
 }
 
 .cone-shape {
-  fill: rgba(143, 176, 255, 0.1);
-  stroke: var(--accent);
-  stroke-width: 1.5;
+  fill: rgba(143, 176, 255, 0.05);
+  stroke: var(--line-strong);
+  stroke-width: 1.2;
   stroke-linejoin: round;
 }
 
@@ -347,8 +350,24 @@
 
 .cone-dim {
   fill: none;
-  stroke: var(--line-strong);
-  stroke-width: 1;
+  stroke: var(--text-muted);
+  stroke-width: 1.1;
+}
+
+/* Выноски от кромок детали к размерной линии. */
+.cone-ext {
+  fill: none;
+  stroke: var(--text-dim);
+  stroke-width: 0.9;
+}
+
+/* Стрелки размерных линий — «галочки», как в схемах «Сверления». */
+.cone-arrow {
+  fill: none;
+  stroke: var(--text-muted);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .cone-angle {
@@ -357,10 +376,22 @@
   stroke-width: 1;
 }
 
+/* Акцент на размерной линии и стрелках посчитанного размера. */
+.cone-dim.is-accent,
+.cone-arrow.is-accent,
+.cone-angle.is-accent {
+  stroke: var(--accent);
+}
+
 .cone-label text {
   fill: var(--text-muted);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 22px;
+}
+
+/* Подпись главного рассчитанного размера — тем же акцентом, что и значение. */
+.cone-label text.is-accent {
+  fill: var(--accent);
 }
 
 .cone-caption {
