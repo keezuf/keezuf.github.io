@@ -6,6 +6,7 @@
   const NUMBER = "Введите число больше нуля";
   const COUNT_INT = "Число отверстий — целое";
   const COUNT_MIN = "Не меньше трёх отверстий";
+  const COUNT_MAX = "Не больше 100 отверстий";
   const TOLERANCE = "Допуск — число от нуля";
 
   const mm = new Intl.NumberFormat("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 3 });
@@ -38,6 +39,9 @@
     if (parsed.value < 3) {
       return { error: COUNT_MIN };
     }
+    if (parsed.value > 100) {
+      return { error: COUNT_MAX };
+    }
     return parsed;
   }
 
@@ -60,11 +64,6 @@
       return { empty: true };
     }
     return (readers[key] || readNumber)(input);
-  }
-
-  function sharedNumber(key) {
-    const parsed = sharedValue(key);
-    return parsed.value === undefined ? null : parsed.value;
   }
 
   function hintOf(input) {
@@ -91,7 +90,129 @@
 
   /* --- Схемы --- */
 
-  const FIG = { width: 300, height: 196, cx: 150, cy: 94, maxR: 82 };
+  /* Схемы контрольной карточки: «противолежащие» перерисовывается под
+     число отверстий, остальные четыре — статичные картинки в разметке. */
+
+  const OPPOSITE = { cx: 150, radius: 90, hole: 15, od: 135, id: 45 };
+
+  function renderOpposite(svg, count, outer, inner) {
+    clearNode(svg);
+
+    const steps = count % 2 === 0 ? count / 2 : (count - 1) / 2;
+    const spread = (steps * 360) / count;
+    const startAngle = 90 - spread / 2;
+    const shift = OPPOSITE.radius * Math.cos(toRadians(spread / 2));
+
+    /* С 17 отверстий кружки сливаются — рисуем их точками, кольцо чуть
+       уменьшаем, а размерные линии выносим за него. */
+    const dense = count > 16;
+
+    let scale = Math.min(1, 180 / (2 * (OPPOSITE.radius + OPPOSITE.hole)));
+    if (dense) {
+      scale = Math.min(scale, 62 / OPPOSITE.radius);
+    }
+
+    const radius = OPPOSITE.radius * scale;
+    const hole = OPPOSITE.hole * scale;
+    const od = OPPOSITE.od * scale;
+    const centerShift = shift * scale;
+    const edge = dense ? 7 : hole;
+    const ringRoom = radius + Math.abs(centerShift) + (dense ? 10 : 0);
+    const dotRadius = Math.max(1.6, Math.min(3.4, ((Math.PI * radius) / count) * 0.36));
+
+    const contentTop = dense ? -(ringRoom + 24) : Math.min(-63, centerShift - radius - hole);
+    const contentBottom = dense ? ringRoom + 24 : Math.max(63, centerShift + radius + hole);
+    const pairY = 100 - (contentTop + contentBottom) / 2;
+    const centerY = pairY + centerShift;
+
+    const pointOf = (angle) => ({
+      x: OPPOSITE.cx + radius * Math.cos(toRadians(angle)),
+      y: centerY - radius * Math.sin(toRadians(angle)),
+    });
+
+    const points = Array.from({ length: count }, (_, index) => pointOf(startAngle + (index * 360) / count));
+    const pair = points[0].x <= points[steps].x ? [points[0], points[steps]] : [points[steps], points[0]];
+    const left = pair[0];
+    const right = pair[1];
+
+    /* Размерные линии: у плотной окружности — за кольцом,
+       у обычной — в свободной полосе над парой и под ней. */
+    function freeLine(direction) {
+      if (dense) {
+        return pairY + direction * ringRoom;
+      }
+      for (let offset = 45; offset <= 90; offset += 2) {
+        const y = pairY + direction * offset;
+        const busy = points.some((point) => Math.abs(point.y - y) < hole + 9);
+        if (!busy) {
+          return y;
+        }
+      }
+      return pairY + direction * 90;
+    }
+
+    const outerY = freeLine(-1);
+    const innerY = freeLine(1);
+
+    svgEl("circle", { cx: OPPOSITE.cx, cy: round(centerY), r: round(od), class: "f-part" }, svg);
+    svgEl("circle", { cx: OPPOSITE.cx, cy: round(centerY), r: round(OPPOSITE.id * scale), class: "f-bore" }, svg);
+    svgEl("circle", { cx: OPPOSITE.cx, cy: round(centerY), r: round(radius), class: "f-pitch" }, svg);
+
+    points.forEach((point, index) => {
+      const focused = index === 0 || index === steps;
+      svgEl(
+        "circle",
+        {
+          cx: round(point.x),
+          cy: round(point.y),
+          r: dense ? (focused ? dotRadius + 1.2 : dotRadius) : hole,
+          class: dense
+            ? focused
+              ? "f-dot f-dot--focus"
+              : "f-dot"
+            : focused
+              ? "f-hole f-hole--focus"
+              : "f-hole",
+        },
+        svg
+      );
+    });
+
+    const line = (fromX, fromY, toX, toY, className) => {
+      svgEl("line", { x1: round(fromX), y1: round(fromY), x2: round(toX), y2: round(toY), class: className }, svg);
+    };
+
+    const arrow = (x, y, direction, className) => {
+      const back = round(x - direction * 7);
+      svgEl(
+        "path",
+        { d: "M" + back + " " + (y - 3) + "L" + round(x) + " " + round(y) + "L" + back + " " + (y + 3), class: className },
+        svg
+      );
+    };
+
+    const outerLeft = left.x - edge;
+    const outerRight = right.x + edge;
+    const innerLeft = left.x + edge;
+    const innerRight = right.x - edge;
+
+    line(outerLeft, pairY, outerLeft, outerY - 6, "f-ext f-ext--solid");
+    line(outerRight, pairY, outerRight, outerY - 6, "f-ext f-ext--solid");
+    line(outerLeft, outerY, outerRight, outerY, "f-dim f-dim--a");
+    arrow(outerLeft, outerY, -1, "f-arrow f-arrow--a");
+    arrow(outerRight, outerY, 1, "f-arrow f-arrow--a");
+
+    line(innerLeft, pairY, innerLeft, innerY + 6, "f-ext f-ext--solid");
+    line(innerRight, pairY, innerRight, innerY + 6, "f-ext f-ext--solid");
+    line(innerLeft, innerY, innerRight, innerY, "f-dim f-dim--b");
+    arrow(innerLeft, innerY, -1, "f-arrow f-arrow--b");
+    arrow(innerRight, innerY, 1, "f-arrow f-arrow--b");
+
+    svgText(svg, OPPOSITE.cx, dense ? outerY - 6 : outerY + 13, outer, "f-chord-text f-chord-text--a");
+    svgText(svg, OPPOSITE.cx, dense ? innerY + 16 : innerY - 7, inner, "f-chord-text f-chord-text--b");
+
+    byId("opposite-note").hidden = !dense;
+  }
 
   function clearNode(node) {
     while (node.firstChild) {
@@ -116,247 +237,305 @@
     return node;
   }
 
-  function geometry(model) {
-    const odR = model.od ? model.od / 2 : 0;
-    const idR = model.id ? model.id / 2 : 0;
-    const pitchR = model.pitch / 2;
-    const holeR = model.hole ? model.hole / 2 : 0;
-    const outer = Math.max(odR, pitchR + holeR, idR) * 1.06;
-    const scale = FIG.maxR / outer;
+  /* --- Схема «шаг отверстий» ---
 
-    return {
-      odR: odR * scale,
-      idR: idR * scale,
-      pitchR: pitchR * scale,
-      holeR: model.hole ? Math.max(2, holeR * scale) : 5,
-      angles: Array.from({ length: model.count }, (_, index) => -90 + (index * 360) / model.count),
-    };
-  }
+     Размеры вынесены за центровую окружность: c₁ — сверху-снаружи,
+     c₂ — снизу-снаружи. Ничего не ложится на отверстия и не уходит
+     за границу рисунка. Угол φ показан дугой между радиусами. */
 
-  function pointAt(angle, radius) {
+  const CHORD = { cx: 180, cy: 155, radius: 90, gap: 20, holeRadius: 5 };
+
+  function chordPoint(angle, radius) {
     const rad = (angle * Math.PI) / 180;
+    return { x: CHORD.cx + radius * Math.cos(rad), y: CHORD.cy + radius * Math.sin(rad) };
+  }
+
+  const angleGap = (angle, target) => {
+    const diff = Math.abs(angle - target) % 360;
+    return diff > 180 ? 360 - diff : diff;
+  };
+
+  /* Границы рисунка собираем по ходу отрисовки: viewBox подгоняется под
+     содержимое, поэтому размеры никогда не выходят за кадр. */
+  function chordBounds() {
     return {
-      x: FIG.cx + radius * Math.cos(rad),
-      y: FIG.cy + radius * Math.sin(rad),
+      minX: CHORD.cx - CHORD.radius,
+      maxX: CHORD.cx + CHORD.radius,
+      minY: CHORD.cy - CHORD.radius,
+      maxY: CHORD.cy + CHORD.radius,
     };
   }
 
-  function drawFlange(svg, state, focus) {
-    if (state.odR) {
-      svgEl("circle", { cx: FIG.cx, cy: FIG.cy, r: round(state.odR), class: "f-part" }, svg);
-    }
-    if (state.idR) {
-      svgEl("circle", { cx: FIG.cx, cy: FIG.cy, r: round(state.idR), class: "f-bore" }, svg);
-    }
-    svgEl("circle", { cx: FIG.cx, cy: FIG.cy, r: round(state.pitchR), class: "f-pitch" }, svg);
+  function growBounds(bounds, point, margin) {
+    bounds.minX = Math.min(bounds.minX, point.x - margin);
+    bounds.maxX = Math.max(bounds.maxX, point.x + margin);
+    bounds.minY = Math.min(bounds.minY, point.y - margin);
+    bounds.maxY = Math.max(bounds.maxY, point.y + margin);
+  }
 
-    state.angles.forEach((angle, index) => {
-      const point = pointAt(angle, state.pitchR);
+  /* Нормаль наружу от центра в середине хорды; для диаметра — на «нижнее» отверстие. */
+  function chordNormal(first, second, fallbackAngle) {
+    const mx = (first.x + second.x) / 2 - CHORD.cx;
+    const my = (first.y + second.y) / 2 - CHORD.cy;
+    const length = Math.hypot(mx, my);
+    if (length < 1) {
+      const rad = (fallbackAngle * Math.PI) / 180;
+      return { x: Math.cos(rad), y: Math.sin(rad) };
+    }
+    return { x: mx / length, y: my / length };
+  }
+
+  /* Концы размерной линии: проекции центров отверстий на линию,
+     удалённую от центра на R + отступ. */
+  function chordSpan(first, second, normal) {
+    const reach =
+      CHORD.radius + CHORD.gap -
+      (normal.x * (first.x - CHORD.cx) + normal.y * (first.y - CHORD.cy));
+    return {
+      start: { x: first.x + normal.x * reach, y: first.y + normal.y * reach },
+      end: { x: second.x + normal.x * reach, y: second.y + normal.y * reach },
+    };
+  }
+
+  function chordLine(svg, from, to, className) {
+    svgEl("line", { x1: round(from.x), y1: round(from.y), x2: round(to.x), y2: round(to.y), class: className }, svg);
+  }
+
+  /* Открытая стрелка: остриё в tip, смотрит по direction. */
+  function chordArrow(svg, tip, direction, className, size) {
+    const length = size || 7;
+    const normal = { x: -direction.y, y: direction.x };
+    const back = { x: tip.x - direction.x * length, y: tip.y - direction.y * length };
+    const wing = length * 0.4;
+    const d =
+      "M" + round(back.x + normal.x * wing) + " " + round(back.y + normal.y * wing) +
+      "L" + round(tip.x) + " " + round(tip.y) +
+      "L" + round(back.x - normal.x * wing) + " " + round(back.y - normal.y * wing);
+    svgEl("path", { d, class: className }, svg);
+  }
+
+  function chordText(svg, point, content, className, angle) {
+    const node = svgEl(
+      "text",
+      { x: round(point.x), y: round(point.y + 3.5), class: className, "text-anchor": "middle" },
+      svg
+    );
+    if (angle) {
+      node.setAttribute("transform", "rotate(" + round(angle) + " " + round(point.x) + " " + round(point.y) + ")");
+    }
+    node.textContent = content;
+  }
+
+  /* Выносная линия от центра отверстия за размерную линию. */
+  function chordExtension(svg, point, edge, normal) {
+    chordLine(svg, point, { x: edge.x + normal.x * 6, y: edge.y + normal.y * 6 }, "f-ext f-ext--solid");
+  }
+
+  function chordDimension(svg, span, normal, style, label, rotate) {
+    const dx = span.end.x - span.start.x;
+    const dy = span.end.y - span.start.y;
+    const length = Math.hypot(dx, dy) || 1;
+    const direction = { x: dx / length, y: dy / length };
+
+    chordLine(svg, span.start, span.end, style.line);
+    chordArrow(svg, span.start, { x: -direction.x, y: -direction.y }, style.arrow);
+    chordArrow(svg, span.end, direction, style.arrow);
+
+    let angle = (Math.atan2(direction.y, direction.x) * 180) / Math.PI;
+    if (angle > 90) {
+      angle -= 180;
+    }
+    if (angle < -90) {
+      angle += 180;
+    }
+
+    const labelPoint = {
+      x: (span.start.x + span.end.x) / 2 + normal.x * 15,
+      y: (span.start.y + span.end.y) / 2 + normal.y * 15,
+    };
+    chordText(svg, labelPoint, label, style.text, rotate ? angle : 0);
+    return labelPoint;
+  }
+
+  function renderChord(svg, chord) {
+    clearNode(svg);
+
+    /* Значения для подписей считает карточка — здесь только рисунок. */
+    const { count, step, through, angle } = chord;
+    const angles = Array.from({ length: count }, (_, index) => -90 + (index * 360) / count);
+    const points = angles.map((angle) => chordPoint(angle, CHORD.radius));
+
+    /* Размер c₂ — между соседями отверстия, ближайшего к низу рисунка. */
+    let bottom = 0;
+    angles.forEach((angle, index) => {
+      if (angleGap(angle, 90) < angleGap(angles[bottom], 90)) {
+        bottom = index;
+      }
+    });
+
+    const adjacent = 1 % count;
+    const acrossLeft = (bottom - 1 + count) % count;
+    const acrossRight = (bottom + 1) % count;
+    const focus = [0, adjacent, acrossLeft, acrossRight];
+
+    const normalAdjacent = chordNormal(points[0], points[adjacent], angles[0] + 180 / count);
+    const normalAcross = chordNormal(points[acrossLeft], points[acrossRight], angles[bottom]);
+    const spanAdjacent = chordSpan(points[0], points[adjacent], normalAdjacent);
+    const spanAcross = chordSpan(points[acrossLeft], points[acrossRight], normalAcross);
+
+    const bounds = chordBounds();
+    [spanAdjacent, spanAcross].forEach((span) => {
+      growBounds(bounds, span.start, 9);
+      growBounds(bounds, span.end, 9);
+    });
+    growBounds(bounds, points[0], 7);
+    growBounds(bounds, points[adjacent], 7);
+    growBounds(bounds, points[acrossLeft], 7);
+    growBounds(bounds, points[acrossRight], 7);
+
+    /* Окружность и радиусы к соседним отверстиям. */
+    svgEl("circle", { cx: CHORD.cx, cy: CHORD.cy, r: CHORD.radius, class: "f-pitch" }, svg);
+    chordLine(svg, { x: CHORD.cx, y: CHORD.cy }, points[0], "f-radius");
+    chordLine(svg, { x: CHORD.cx, y: CHORD.cy }, points[adjacent], "f-radius");
+
+    points.forEach((point, index) => {
       svgEl(
         "circle",
         {
           cx: round(point.x),
           cy: round(point.y),
-          r: round(state.holeR),
+          r: CHORD.holeRadius,
           class: focus.includes(index) ? "f-hole f-hole--focus" : "f-hole",
         },
         svg
       );
     });
-  }
 
-  /* Размерная линия между двумя точками: сноски, засечки и номер. */
-  function dimension(svg, from, to, offset, label, options = {}) {
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const length = Math.hypot(dx, dy) || 1;
-    const ux = dx / length;
-    const uy = dy / length;
-    const nx = -uy;
-    const ny = ux;
+    /* Выносные линии рисуем поверх отверстий: видно, что размер идёт от центров. */
+    chordExtension(svg, points[0], spanAdjacent.start, normalAdjacent);
+    chordExtension(svg, points[adjacent], spanAdjacent.end, normalAdjacent);
+    chordExtension(svg, points[acrossLeft], spanAcross.start, normalAcross);
+    chordExtension(svg, points[acrossRight], spanAcross.end, normalAcross);
 
-    const ax = from.x + nx * offset;
-    const ay = from.y + ny * offset;
-    const bx = to.x + nx * offset;
-    const by = to.y + ny * offset;
+    const adjacentLabel = chordDimension(
+      svg,
+      spanAdjacent,
+      normalAdjacent,
+      { line: "f-dim f-dim--a", arrow: "f-arrow f-arrow--a", text: "f-chord-text f-chord-text--a" },
+      mm.format(step),
+      true
+    );
+    const acrossLabel = chordDimension(
+      svg,
+      spanAcross,
+      normalAcross,
+      { line: "f-dim f-dim--b", arrow: "f-arrow f-arrow--b", text: "f-chord-text f-chord-text--b" },
+      mm.format(through),
+      false
+    );
+    growBounds(bounds, adjacentLabel, 26);
+    growBounds(bounds, acrossLabel, 26);
 
-    const variant = options.variant || "";
-    const lineClass =
-      "f-dim" + (options.soft ? " f-dim--soft" : "") + (variant ? " f-dim--" + variant : "");
-    const badgeClass = "f-badge" + (variant ? " f-badge--" + variant : "");
-    const textClass = "f-badge-text" + (variant ? " f-badge-text--" + variant : "");
-
-    svgEl("line", { x1: round(from.x), y1: round(from.y), x2: round(ax), y2: round(ay), class: "f-ext" }, svg);
-    svgEl("line", { x1: round(to.x), y1: round(to.y), x2: round(bx), y2: round(by), class: "f-ext" }, svg);
-    svgEl("line", { x1: round(ax), y1: round(ay), x2: round(bx), y2: round(by), class: lineClass }, svg);
-
-    const tick = 4;
-    const tx = (ux + nx) * tick;
-    const ty = (uy + ny) * tick;
-    svgEl("line", { x1: round(ax - tx), y1: round(ay - ty), x2: round(ax + tx), y2: round(ay + ty), class: lineClass }, svg);
-    svgEl("line", { x1: round(bx - tx), y1: round(by - ty), x2: round(bx + tx), y2: round(by + ty), class: lineClass }, svg);
-
-    /* Номер: либо рядом с линией, либо снаружи от центра детали — чтобы не лез в отверстия. */
-    const mx = (ax + bx) / 2;
-    const my = (ay + by) / 2;
-    let lx = mx + nx * (offset >= 0 ? 14 : -14);
-    let ly = my + ny * (offset >= 0 ? 14 : -14);
-
-    if (!options.normalBadge) {
-      let ox = mx - FIG.cx;
-      let oy = my - FIG.cy;
-      let distance = Math.hypot(ox, oy);
-      if (distance < 10) {
-        ox = nx;
-        oy = ny;
-        distance = 1;
-      }
-      lx = mx + (ox / distance) * 15;
-      ly = my + (oy / distance) * 15;
-    }
-
-    svgEl("circle", { cx: round(lx), cy: round(ly), r: 8, class: badgeClass }, svg);
-    svgText(svg, lx, ly + 3.4, label, textClass);
-  }
-
-  function unitVector(from, to) {
-    const dx = to.x - from.x;
-    const dy = to.y - from.y;
-    const length = Math.hypot(dx, dy) || 1;
-    return { x: dx / length, y: dy / length };
-  }
-
-  function shift(point, vector, distance) {
-    return { x: point.x + vector.x * distance, y: point.y + vector.y * distance };
-  }
-
-  /* Пара отверстий: размер по внешним и по внутренним кромкам. */
-  function drawPair(svg, state, model, firstIndex, secondIndex, labels, offset) {
-    clearNode(svg);
-    drawFlange(svg, state, [firstIndex, secondIndex % model.count]);
-
-    const first = pointAt(state.angles[firstIndex], state.pitchR);
-    const second = pointAt(state.angles[secondIndex % model.count], state.pitchR);
-    const u = unitVector(first, second);
-
-    dimension(svg, shift(first, u, -state.holeR), shift(second, u, state.holeR), offset, labels[0], { variant: "a" });
-    dimension(svg, shift(first, u, state.holeR), shift(second, u, -state.holeR), -offset, labels[1], { variant: "b" });
-  }
-
-  function renderChord(svg, model) {
-    clearNode(svg);
-    const state = geometry(model);
-    drawFlange(svg, state, [0, 1, 2 % model.count]);
-
-    const first = pointAt(state.angles[0], state.pitchR);
-    const second = pointAt(state.angles[1], state.pitchR);
-    const third = pointAt(state.angles[2 % model.count], state.pitchR);
-
-    dimension(svg, first, second, -15, "c₁", { variant: "a" });
-    if (model.count > 2) {
-      dimension(svg, first, third, -32, "c₂", { soft: true, normalBadge: true });
-    }
-
-    const radius = Math.min(34, state.pitchR * 0.45);
-    const arcStart = pointAt(state.angles[0], radius);
-    const arcEnd = pointAt(state.angles[1], radius);
+    /* Угол φ между радиусами соседних отверстий. */
+    const arcRadius = CHORD.radius * 0.5;
+    const sweep = 360 / count;
+    const arcStart = chordPoint(angles[0], arcRadius);
+    const arcEnd = chordPoint(angles[0] + sweep, arcRadius);
     svgEl(
       "path",
       {
         d:
           "M" + round(arcStart.x) + " " + round(arcStart.y) +
-          "A" + round(radius) + " " + round(radius) + " 0 0 1 " + round(arcEnd.x) + " " + round(arcEnd.y),
+          "A" + round(arcRadius) + " " + round(arcRadius) + " 0 " + (sweep > 180 ? 1 : 0) + " 1 " +
+          round(arcEnd.x) + " " + round(arcEnd.y),
         class: "f-arc",
       },
       svg
     );
 
-    const phi = pointAt(state.angles[0] + 180 / model.count, radius + 15);
-    svgText(svg, phi.x, phi.y + 3.5, "φ", "f-note");
+    const startRad = (angles[0] * Math.PI) / 180;
+    const endRad = ((angles[0] + sweep) * Math.PI) / 180;
+    chordArrow(svg, arcStart, { x: Math.sin(startRad), y: -Math.cos(startRad) }, "f-arrow f-arrow--muted", 5.5);
+    chordArrow(svg, arcEnd, { x: -Math.sin(endRad), y: Math.cos(endRad) }, "f-arrow f-arrow--muted", 5.5);
+
+    const phi = chordPoint(angles[0] + sweep / 2, arcRadius + 18);
+    svgText(svg, phi.x, phi.y + 3.5, deg.format(angle) + "°", "f-note");
+    growBounds(bounds, phi, 18);
+
+    /* Кадр подгоняем под содержимое: ничего не выходит за границы. */
+    const pad = 8;
+    svg.setAttribute(
+      "viewBox",
+      [
+        round(bounds.minX - pad),
+        round(bounds.minY - pad),
+        round(bounds.maxX - bounds.minX + pad * 2),
+        round(bounds.maxY - bounds.minY + pad * 2),
+      ].join(" ")
+    );
   }
 
-  function renderMark(svg, model, outer, inner) {
-    clearNode(svg);
-    const state = geometry(model);
-    drawFlange(svg, state, [0]);
+  /* --- Отметки отверстий: углы поворотного стола или координаты для ЧПУ --- */
 
-    const hole = pointAt(state.angles[0], state.pitchR);
+  const marksToggle = byId("marks-toggle");
+  const marksPanel = byId("marks-panel");
+  const marksList = byId("marks-list");
+  const marksStart = byId("chord-start");
+  const START_MESSAGE = "Введите число от нуля";
+  const coord = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 });
+  const toRadians = (value) => (value * Math.PI) / 180;
 
-    if (outer && state.odR) {
-      dimension(svg, { x: FIG.cx, y: FIG.cy - state.odR }, hole, -16, "1", { variant: "a", normalBadge: true });
+  let marksMode = "table";
+  let marksOpen = false;
+
+  function cleanCoordinate(value) {
+    const rounded = Math.round(value * 100) / 100;
+    return rounded === 0 ? 0 : rounded;
+  }
+
+  function normalizeAngle(value) {
+    const wrapped = ((value % 360) + 360) % 360;
+    const rounded = Math.round(wrapped * 100) / 100;
+    return rounded >= 360 ? 0 : rounded;
+  }
+
+  function clearMarks() {
+    while (marksList.firstChild) {
+      marksList.removeChild(marksList.firstChild);
     }
-    if (inner && state.idR) {
-      dimension(svg, { x: FIG.cx, y: FIG.cy - state.idR }, hole, -16, "2", { variant: "b", normalBadge: true });
+  }
+
+  function updateMarks(pitch, count) {
+    const parsed = readNumber(marksStart, true);
+    applyMessage(marksStart, parsed.error ? START_MESSAGE : "");
+
+    clearMarks();
+    if (parsed.error || !pitch || !count) {
+      return;
     }
-  }
 
-  function renderOpposite(svg, model, steps) {
-    const state = geometry(model);
-    drawPair(svg, state, model, 0, steps, ["1", "2"], Math.max(22, state.idR + 12));
-  }
+    const start = parsed.value || 0;
+    const stepAngle = 360 / count;
+    const radius = pitch / 2;
+    const fragment = document.createDocumentFragment();
 
-  /* Крупный фрагмент: два отверстия и два размера между ними. */
-  function renderPairZoom(svg, model, steps, labels) {
-    clearNode(svg);
+    for (let index = 0; index < count; index += 1) {
+      const angle = normalizeAngle(start + index * stepAngle);
+      const item = document.createElement("li");
+      item.className = "marks-item";
 
-    const pitch = model.pitch;
-    const hole = model.hole || pitch * 0.06;
-    const angle = (Math.PI * 2 * steps) / model.count;
-    const chordMm = pitch * Math.sin(angle / 2);
-    const scale = Math.min(232 / chordMm, 9);
-    const holeR = Math.max(4, (hole / 2) * scale);
-    const chordPx = chordMm * scale;
-    const pitchR = (pitch / 2) * scale;
-    const sagitta = Math.sqrt(Math.max(pitchR * pitchR - (chordPx / 2) * (chordPx / 2), 0));
+      if (marksMode === "table") {
+        item.textContent = deg.format(angle) + "°";
+      } else {
+        const x = cleanCoordinate(radius * Math.cos(toRadians(angle)));
+        const y = cleanCoordinate(radius * Math.sin(toRadians(angle)));
+        item.textContent = "X" + coord.format(x) + " Y" + coord.format(y);
+      }
 
-    const left = { x: FIG.cx - chordPx / 2, y: FIG.cy };
-    const right = { x: FIG.cx + chordPx / 2, y: FIG.cy };
-
-    /* Дуга центровой окружности: круг с центром ниже хорды, лишнее обрежет кадр. */
-    svgEl("circle", { cx: FIG.cx, cy: round(FIG.cy + sagitta), r: round(pitchR), class: "f-pitch" }, svg);
-
-    svgEl("circle", { cx: round(left.x), cy: round(left.y), r: round(holeR), class: "f-hole f-hole--focus" }, svg);
-    svgEl("circle", { cx: round(right.x), cy: round(right.y), r: round(holeR), class: "f-hole f-hole--focus" }, svg);
-
-    dimension(svg, { x: left.x - holeR, y: left.y }, { x: right.x + holeR, y: right.y }, 14, labels[0], { variant: "a" });
-    dimension(svg, { x: left.x + holeR, y: left.y }, { x: right.x - holeR, y: right.y }, -14, labels[1], { variant: "b" });
-  }
-
-  function renderAdjacent(svg, model) {
-    renderPairZoom(svg, model, 1, ["3", "4"]);
-  }
-
-  function renderThrough(svg, model) {
-    renderPairZoom(svg, model, 2, ["5", "6"]);
-  }
-
-  function renderEdge(svg, model) {
-    clearNode(svg);
-    const state = geometry(model);
-    drawFlange(svg, state, [0]);
-
-    const hole = pointAt(state.angles[0], state.pitchR);
-
-    if (state.odR) {
-      dimension(
-        svg,
-        { x: FIG.cx, y: FIG.cy - state.odR },
-        { x: hole.x, y: hole.y - state.holeR },
-        -16,
-        "7",
-        { variant: "a", normalBadge: true }
-      );
+      fragment.appendChild(item);
     }
-    if (state.idR) {
-      dimension(
-        svg,
-        { x: FIG.cx, y: FIG.cy - state.idR },
-        { x: hole.x, y: hole.y + state.holeR },
-        -16,
-        "8",
-        { variant: "b", normalBadge: true }
-      );
-    }
+
+    marksList.appendChild(fragment);
   }
 
   /* --- Карточка «шаг отверстий» --- */
@@ -369,24 +548,31 @@
       byId("chord-through").textContent = EMPTY;
       byId("chord-angle").textContent = EMPTY;
       figure.hidden = true;
+      marksToggle.hidden = true;
+      marksPanel.hidden = true;
+      clearMarks();
       return;
     }
 
     const step = pitch.value * Math.sin(Math.PI / count.value);
     const through = pitch.value * Math.sin((2 * Math.PI) / count.value);
+    const angle = 360 / count.value;
 
     byId("chord-step").textContent = mm.format(step);
     byId("chord-through").textContent = mm.format(through) + " мм";
-    byId("chord-angle").textContent = deg.format(360 / count.value) + "°";
+    byId("chord-angle").textContent = deg.format(angle) + "°";
 
     figure.hidden = false;
-    renderChord(figure.querySelector("svg"), { pitch: pitch.value, count: count.value, hole: 0, od: 0, id: 0 });
+    marksToggle.hidden = false;
+    marksPanel.hidden = !marksOpen;
+
+    renderChord(figure.querySelector("svg"), { count: count.value, step, through, angle });
+    updateMarks(pitch.value, count.value);
   }
 
   /* --- Карточка «разметка» --- */
 
   function updateMark(pitch, odDrawing, odActual, idDrawing, idActual) {
-    const figure = byId("mark-figure");
     const outerValue = byId("mark-outer");
     const innerValue = byId("mark-inner");
     const outerNote = byId("mark-outer-note");
@@ -424,21 +610,20 @@
     innerNote.hidden = !innerDiff;
     innerNote.textContent = innerDiff ? "по чертежу: " + mm.format(innerByDrawing) + " мм" : "";
 
-    figure.hidden = !(pitch.value && (outer !== null || inner !== null));
-    if (!figure.hidden) {
-      renderMark(
-        figure.querySelector("svg"),
-        { pitch: pitch.value, count: 8, hole: 0, od: od || 0, id: id || 0 },
-        outer !== null,
-        inner !== null
-      );
-    }
+    byId("fig-mark-outer").textContent = outerValue.textContent;
+    byId("fig-mark-inner").textContent = innerValue.textContent;
   }
 
   /* --- Карточка «контроль» --- */
 
   function setRow(index, value, drawing, tolerance) {
-    byId("r" + index).textContent = value === null ? EMPTY : mm.format(value);
+    const text = value === null ? EMPTY : mm.format(value);
+    byId("r" + index).textContent = text;
+
+    const caption = byId("fig-label-" + index);
+    if (caption) {
+      caption.textContent = text;
+    }
 
     const limit = byId("r" + index + "-limit");
     if (value === null || tolerance === null) {
@@ -473,14 +658,12 @@
       ? "Внешние кромки · внутренними губками (пара через " + steps + ")"
       : "Внешние кромки · внутренними губками";
 
-    const figures = { opposite: byId("group-opposite"), adjacent: byId("group-adjacent"), through: byId("group-through"), edge: byId("group-edge") };
+    const oppositeSvg = byId("group-opposite").querySelector("svg");
 
     if (!ready) {
       [1, 2, 3, 4, 5, 6, 7, 8].forEach((index) => setRow(index, null, null, null));
       warning.hidden = true;
-      Object.values(figures).forEach((group) => {
-        group.hidden = true;
-      });
+      renderOpposite(oppositeSvg, count.value || 6, EMPTY, EMPTY);
       return;
     }
 
@@ -516,24 +699,13 @@
       edgeTolerance
     );
 
-    /* Схемы */
-    const model = {
-      pitch: pitch.value,
-      count: count.value,
-      hole: holeActual,
-      od: od || 0,
-      id: id || 0,
-    };
-
-    figures.opposite.hidden = false;
-    figures.adjacent.hidden = false;
-    figures.through.hidden = false;
-    figures.edge.hidden = !(od || id);
-
-    renderOpposite(figures.opposite.querySelector("svg"), model, steps);
-    renderAdjacent(figures.adjacent.querySelector("svg"), model);
-    renderThrough(figures.through.querySelector("svg"), model);
-    renderEdge(figures.edge.querySelector("svg"), model);
+    /* Схема «противолежащие» — единственная, что следует за числом отверстий. */
+    renderOpposite(
+      oppositeSvg,
+      count.value,
+      mm.format(opposite + holeActual),
+      mm.format(opposite - holeActual)
+    );
 
     /* Предупреждения о невозможной геометрии */
     const messages = [];
@@ -601,6 +773,34 @@
       updateAll();
     });
   });
+
+  /* --- Отметки: разворачивание и режим --- */
+
+  /* Список отметок зависит только от полей карточки шага — читаем их явно. */
+  function updateMarksFromInputs() {
+    updateMarks(sharedValue("pitch").value || 0, sharedValue("count").value || 0);
+  }
+
+  marksToggle.addEventListener("click", () => {
+    marksOpen = !marksOpen;
+    marksPanel.hidden = !marksOpen;
+    marksToggle.setAttribute("aria-expanded", marksOpen ? "true" : "false");
+    marksToggle.textContent = marksOpen ? "Скрыть отметки/координаты" : "Показать отметки/координаты";
+  });
+
+  all("[data-marks-mode]").forEach((button) => {
+    button.addEventListener("click", () => {
+      marksMode = button.dataset.marksMode === "cnc" ? "cnc" : "table";
+      all("[data-marks-mode]").forEach((other) => {
+        const active = other === button;
+        other.classList.toggle("is-active", active);
+        other.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+      updateMarksFromInputs();
+    });
+  });
+
+  marksStart.addEventListener("input", updateMarksFromInputs);
 
   updateAll();
 })();

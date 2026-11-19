@@ -208,13 +208,6 @@
   height: auto;
 }
 
-.fig-caption {
-  margin-top: 0.35rem;
-  color: var(--text-dim);
-  font-size: 0.78rem;
-  line-height: 1.5;
-}
-
 /* Разметка: два размера — от наружной и от внутренней кромки. */
 .mark-row {
   display: grid;
@@ -315,20 +308,6 @@
   line-height: 1.4;
 }
 
-.ctrl-num {
-  display: inline-grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 1.05rem;
-  height: 1.05rem;
-  border: 1px solid var(--accent);
-  border-radius: 50%;
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 0.62rem;
-  line-height: 1;
-}
-
 .ctrl-value {
   color: var(--text);
   font-family: var(--font-mono);
@@ -364,6 +343,16 @@
   stroke-width: 1.2;
 }
 
+.f-axis {
+  stroke: var(--text-dim);
+  stroke-width: 0.9;
+  stroke-dasharray: 9 3 2 3;
+}
+
+.f-center {
+  fill: var(--text-muted);
+}
+
 .f-pitch {
   fill: none;
   stroke: var(--line-strong);
@@ -383,14 +372,24 @@
   stroke-width: 1.6;
 }
 
+.f-dot {
+  fill: var(--text-muted);
+}
+
+.f-dot--focus {
+  fill: var(--accent);
+}
+
+.ctrl-fig-note {
+  margin-top: 0.35rem;
+  color: var(--text-dim);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
 .f-dim {
   stroke: var(--text);
   stroke-width: 1.1;
-}
-
-.f-dim--soft {
-  stroke: var(--text-muted);
-  stroke-dasharray: 5 4;
 }
 
 .f-dim--a {
@@ -399,22 +398,6 @@
 
 .f-dim--b {
   stroke: var(--mint);
-}
-
-.f-badge--a {
-  stroke: var(--accent);
-}
-
-.f-badge--b {
-  stroke: var(--mint);
-}
-
-.f-badge-text--a {
-  fill: var(--accent);
-}
-
-.f-badge-text--b {
-  fill: var(--mint);
 }
 
 .f-ext {
@@ -429,23 +412,57 @@
   stroke-width: 1;
 }
 
-.f-badge {
-  fill: #0b0d12;
-  stroke: var(--accent);
-  stroke-width: 1;
-}
-
-.f-badge-text {
-  fill: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 700;
-}
-
 .f-note {
   fill: var(--text-muted);
   font-family: var(--font-mono);
   font-size: 10px;
+}
+
+/* Схема «шаг отверстий»: размеры вынесены за окружность. */
+.f-ext--solid {
+  stroke-dasharray: none;
+}
+
+.f-radius {
+  stroke: var(--text-dim);
+  stroke-width: 0.9;
+}
+
+.f-arrow {
+  fill: none;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.f-arrow--a {
+  stroke: var(--accent);
+}
+
+.f-arrow--b {
+  stroke: var(--mint);
+}
+
+.f-arrow--muted {
+  stroke: var(--text-muted);
+}
+
+.f-chord-text {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ctrl-figure .f-chord-text {
+  font-size: 13px;
+}
+
+.f-chord-text--a {
+  fill: var(--accent);
+}
+
+.f-chord-text--b {
+  fill: var(--mint);
 }
 
 .calc-foot {
@@ -460,4 +477,88 @@
   .ctrl-figure {
     width: 100%;
   }
+}
+
+/* Отметки отверстий: свёрнутый блок под схемой. */
+.marks-toggle {
+  width: 100%;
+  justify-content: center;
+  font-family: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.marks-toggle:hover {
+  transform: none;
+}
+
+.marks {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.marks-modes {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.marks-mode {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(18, 23, 34, 0.72);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.marks-mode:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.marks-mode.is-active {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(143, 176, 255, 0.12);
+}
+
+.marks-list {
+  display: grid;
+  gap: 0.2rem;
+  max-height: 15rem;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  font-variant-numeric: tabular-nums;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+.marks-item {
+  padding: 0.15rem 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.marks-item:last-child {
+  border-bottom: 0;
+}
+
+/* Значения: наружные размеры — акцент, внутренние — мятный. */
+.value-accent {
+  color: var(--accent);
+}
+
+.value-mint,
+.calc-extra dd.value-mint {
+  color: var(--mint);
 }
